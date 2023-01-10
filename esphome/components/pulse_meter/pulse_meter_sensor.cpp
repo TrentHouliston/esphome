@@ -37,8 +37,8 @@ void PulseMeterSensor::loop() {
   this->get_ = temp;
 
   // Print all the logging information
-  for (uint32_t i = 0; i != this->logging_index_; i = (i + 1) % 100) {
-    const auto &log = this->logging_[i];
+  for (; this->last_log_index_ != this->logging_index_; this->last_log_index_ = (this->last_log_index_ + 1) % 100) {
+    const auto &log = this->logging_[this->last_log_index_];
     ESP_LOGVV(TAG, "ISR: %u %u", log.time_, log.pin_);
   }
 

@@ -62,6 +62,7 @@ class PulseMeterSensor : public sensor::Sensor, public Component {
   };
   Logging logging_[100];
   volatile uint32_t logging_index_ = 0;
+  uint32_t last_log_index_ = 0;
 
   // Only use these variables in the ISR
   ISRInternalGPIOPin isr_pin_;
