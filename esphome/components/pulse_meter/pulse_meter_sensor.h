@@ -59,6 +59,10 @@ class PulseMeterSensor : public sensor::Sensor, public Component {
   struct Logging {
     volatile uint32_t time_ = 0;
     volatile bool pin_ = false;
+    volatile bool last_pin_val_ = false;
+    volatile bool start_in_pulse_ = false;
+    volatile bool end_in_pulse_ = false;
+    volatile bool filter_length_ = false;
   };
   Logging logging_[100];
   volatile uint32_t logging_index_ = 0;

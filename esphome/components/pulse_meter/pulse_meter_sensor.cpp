@@ -39,7 +39,7 @@ void PulseMeterSensor::loop() {
   // Print all the logging information
   for (; this->last_log_index_ != this->logging_index_; this->last_log_index_ = (this->last_log_index_ + 1) % 100) {
     const auto &log = this->logging_[this->last_log_index_];
-    ESP_LOGD(TAG, "ISR: %u %u", log.time_, log.pin_);
+    ESP_LOGD(TAG, "ISR: %u %u %u %u %u %u", log.time_, log.pin_, log.last_pin_val_, log.filter_length_, log.start_in_pulse_, log.end_in_pulse_);
   }
 
   // Check if we detected a pulse this loop
@@ -112,9 +112,14 @@ void IRAM_ATTR PulseMeterSensor::pulse_intr(PulseMeterSensor *sensor) {
   const bool pin_val = sensor->isr_pin_.digital_read();
 
   // For logging when the interrupts happened
-  sensor->logging_[sensor->logging_index_].time_ = now;
-  sensor->logging_[sensor->logging_index_].pin_ = pin_val;
-  sensor->logging_index_ = (sensor->logging_index_ + 1) % 100;
+  uint32_t i = sensor->logging_index_;
+  sensor->logging_[i].time_ = now;
+  sensor->logging_[i].pin_ = pin_val;
+  sensor->logging_[i].last_pin_val_ = sensor->last_pin_val_;
+  sensor->logging_[i].start_in_pulse_ = sensor->in_pulse_;
+
+  sensor->logging_[i].filter_length_ = false;
+
 
   // A pulse occurred faster than we can detect
   if (sensor->last_pin_val_ == pin_val) {
@@ -126,6 +131,9 @@ void IRAM_ATTR PulseMeterSensor::pulse_intr(PulseMeterSensor *sensor) {
   } else {
     // Check if the last interrupt was long enough in the past
     if (now - sensor->last_intr_ > sensor->filter_us_) {
+
+      sensor->logging_[i].filter_length_ = true;
+
       // High pulse of filter length now falling (therefore last_intr_ was the rising edge)
       if (!sensor->in_pulse_ && sensor->last_pin_val_) {
         sensor->last_edge_candidate_us_ = sensor->last_intr_;
@@ -142,6 +150,10 @@ void IRAM_ATTR PulseMeterSensor::pulse_intr(PulseMeterSensor *sensor) {
     sensor->last_intr_ = now;
     sensor->last_pin_val_ = pin_val;
   }
+
+  sensor->logging_[i].end_in_pulse_ = sensor->in_pulse_;
+
+  sensor->logging_index_ = (sensor->logging_index_ + 1) % 100;
 }
 
 }  // namespace pulse_meter
