@@ -39,7 +39,7 @@ void PulseMeterSensor::loop() {
   // Print all the logging information
   for (; this->last_log_index_ != this->logging_index_; this->last_log_index_ = (this->last_log_index_ + 1) % 100) {
     const auto &log = this->logging_[this->last_log_index_];
-    ESP_LOGVV(TAG, "ISR: %u %u", log.time_, log.pin_);
+    ESP_LOGD(TAG, "ISR: %u %u", log.time_, log.pin_);
   }
 
   // Check if we detected a pulse this loop
