@@ -36,6 +36,12 @@ void PulseMeterSensor::loop() {
   this->set_ = this->get_;
   this->get_ = temp;
 
+  // Print all the logging information
+  for (uint32_t i = 0; i != this->logging_index_; i = (i + 1) % 100) {
+    const auto &log = this->logging_[i];
+    ESP_LOGVV(TAG, "ISR: %u %u", log.time_, log.pin_);
+  }
+
   // Check if we detected a pulse this loop
   if (this->get_->count_ > 0) {
     // Keep a running total of pulses if a total sensor is configured
@@ -87,6 +93,11 @@ void IRAM_ATTR PulseMeterSensor::edge_intr(PulseMeterSensor *sensor) {
   // Get the current time before we do anything else so the measurements are consistent
   const uint32_t now = micros();
 
+  // For logging when the interrupts happened
+  sensor->logging_[sensor->logging_index_].time_ = now;
+  sensor->logging_[sensor->logging_index_].pin_ = false;
+  sensor->logging_index_ = (sensor->logging_index_ + 1) % 100;
+
   if ((now - sensor->last_edge_candidate_us_) >= sensor->filter_us_) {
     sensor->last_edge_candidate_us_ = now;
     sensor->set_->last_detected_edge_us_ = now;
@@ -99,6 +110,11 @@ void IRAM_ATTR PulseMeterSensor::pulse_intr(PulseMeterSensor *sensor) {
   // Get the current time before we do anything else so the measurements are consistent
   const uint32_t now = micros();
   const bool pin_val = sensor->isr_pin_.digital_read();
+
+  // For logging when the interrupts happened
+  sensor->logging_[sensor->logging_index_].time_ = now;
+  sensor->logging_[sensor->logging_index_].pin_ = pin_val;
+  sensor->logging_index_ = (sensor->logging_index_ + 1) % 100;
 
   // A pulse occurred faster than we can detect
   if (sensor->last_pin_val_ == pin_val) {

@@ -56,6 +56,13 @@ class PulseMeterSensor : public sensor::Sensor, public Component {
   volatile State *set_ = state_;
   volatile State *get_ = state_ + 1;
 
+  struct Logging {
+    volatile uint32_t time_ = 0;
+    volatile bool pin_ = false;
+  };
+  Logging logging_[100];
+  volatile uint32_t logging_index_ = 0;
+
   // Only use these variables in the ISR
   ISRInternalGPIOPin isr_pin_;
   uint32_t last_edge_candidate_us_ = 0;
