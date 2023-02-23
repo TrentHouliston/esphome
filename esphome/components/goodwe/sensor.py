@@ -18,7 +18,7 @@ from esphome.const import (
     UNIT_WATT,
 )
 
-DEPENDENCIES = ["uart", "text_sensor"]
+DEPENDENCIES = ["uart"]
 
 CONF_WORK_MODE = "work_mode"
 CONF_GRID_VOLTAGE = "grid_voltage"
