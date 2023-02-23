@@ -1,18 +1,23 @@
 #include "goodwe.h"
 #include "esphome/core/log.h"
-#include <arpa/inet.h>
 
 namespace esphome {
 namespace goodwe {
 
 const uint8_t request_packet[9] = {0xaa, 0x55, 0xab, 0x7f, 0x01, 0x01, 0x00, 0x02, 0x2b};
 
-uint16_t endian(const uint16_t &v) { return ntohs(v); }
-uint32_t endian(const uint32_t &v) { return ntohl(v); }
+uint16_t swap_endian(const uint16_t &v) {
+  // Swap endian
+  return (v >> 8) | (v << 8);
+}
+uint32_t swap_endian(const uint32_t &v) {
+  // Swap endian
+  return (v >> 24) | ((v << 8) & 0x00FF0000) | ((v >> 8) & 0x0000FF00) | (v << 24);
+ }
 
 template<typename T, T denominator> struct Data {
   T data;
-  operator float() { return float(endian(data)) / float(denominator); }
+  operator float() { return float(swap_endian(data)) / float(denominator); }
 } __attribute__((packed));
 
 // Data is big endian
