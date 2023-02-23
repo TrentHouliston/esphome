@@ -4,6 +4,8 @@
 namespace esphome {
 namespace goodwe {
 
+static const char *const TAG = "goodwe.inverter";
+
 const uint8_t request_packet[9] = {0xaa, 0x55, 0xab, 0x7f, 0x01, 0x01, 0x00, 0x02, 0x2b};
 
 uint16_t swap_endian(const uint16_t &v) {
