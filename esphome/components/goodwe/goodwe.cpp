@@ -1,5 +1,6 @@
 #include "goodwe.h"
 #include "esphome/core/log.h"
+#include <arpa/inet.h>
 
 namespace esphome {
 namespace goodwe {
@@ -32,12 +33,12 @@ struct Response {
   Data<uint16_t, 1> ac_grid_power;
   uint16_t work_mode;
   Data<uint16_t, 10> temperature;
-  char unknown[4];
+  char unknown1[4];
   Data<uint32_t, 10> lifetime_energy_total;
   Data<uint32_t, 1> hours_total;
-  char unknown[12];
+  char unknown2[12];
   uint16_t daily_energy;
-  char unknown[14];
+  char unknown3[14];
   uint16_t crc;
 } __attribute__((packed));
 
