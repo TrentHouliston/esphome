@@ -6,9 +6,9 @@
 #include "esphome/components/text_sensor/text_sensor.h"
 
 namespace esphome {
-namespace abb_aurora {
+namespace goodwe {
 
-class ABBAurora : public Component, public uart::UARTDevice {
+class GoodWe : public Component, public uart::UARTDevice {
  public:
   void set_work_mode_sensor(text_sensor::TextSensor *work_mode_sensor);
   void set_grid_voltage_sensor(sensor::Sensor *grid_voltage_sensor);
