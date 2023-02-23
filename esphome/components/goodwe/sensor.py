@@ -32,7 +32,7 @@ CONF_SOLAR_STRING_2_CURRENT = "solar_string_2_current"
 CONF_BOOSTER_TEMPERATURE = "booster_temperature"
 
 goodwe_ns = cg.esphome_ns.namespace("goodwe")
-GoodWe = goodwe_ns.class_("GoodWe", uart.UARTDevice)
+GoodWe = goodwe_ns.class_("GoodWe", uart.UARTDevice, cg.Component)
 
 CONFIG_SCHEMA = (
     cv.Schema(
