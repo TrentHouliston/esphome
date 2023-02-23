@@ -112,7 +112,7 @@ void GoodWe::setup() {
 }
 
 void GoodWe::dump_config() {  // NOLINT(readability-function-cognitive-complexity)
-  ESP_LOGCONFIG(TAG, "ABBAurora:");
+  ESP_LOGCONFIG(TAG, "GoodWe:");
 
   LOG_TEXT_SENSOR("  ", "Work Mode", this->work_mode_sensor_);
 
