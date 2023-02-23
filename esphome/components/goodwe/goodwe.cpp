@@ -105,10 +105,6 @@ void GoodWe::loop() {
   // }
 }
 
-bool GoodWe::checksum(const DataPacket *data) {
-  // TODO implement the ABB checksum
-}
-
 void GoodWe::setup() {
   // TODO build all the packets to send
 }
