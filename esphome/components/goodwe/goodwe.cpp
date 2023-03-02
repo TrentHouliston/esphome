@@ -47,7 +47,9 @@ struct Response {
   Data<uint32_t, 1> hours_total;
   char unknown2[12];
   uint16_t daily_energy;
-  char unknown3[14];
+  char unkonwn3[4];
+  uint8_t seconds;
+  char unknown3[9];
   uint16_t crc;
 } __attribute__((packed));
 
@@ -89,7 +91,7 @@ void GoodWe::loop() {
     // Send the request packet and reset our read index
     this->write_array(request_packet, sizeof(request_packet));
     idx = 0;
-    ESP_LOGD(TAG, "Sent request packet to inverter");
+    ESP_LOGVV(TAG, "Sent request packet to inverter");
   } else {
     while (this->available()) {
       // Read the next byte until we have a full packet
@@ -118,7 +120,13 @@ void GoodWe::loop() {
 
         // Parse the response
         Response *response = reinterpret_cast<Response *>(buffer);
-        ESP_LOGD(TAG, "Received response from inverter");
+        ESP_LOGVV(TAG, "Received response from inverter");
+
+        if (response->seconds == this->last_seconds_) {
+          ESP_LOGVV(TAG, "No new data");
+          idx = 0;
+          return;
+        }
 
         // Work mode
         if (this->work_mode_sensor_ != nullptr) {

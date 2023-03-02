@@ -40,6 +40,8 @@ class GoodWe : public Component, public uart::UARTDevice {
   sensor::Sensor *solar_string_2_voltage_sensor_{nullptr};
   sensor::Sensor *solar_string_2_current_sensor_{nullptr};
   sensor::Sensor *temperature_sensor_{nullptr};
+
+  uint8_t last_seconds_ = 255;
 };
 }  // namespace goodwe
 }  // namespace esphome
