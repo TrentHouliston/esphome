@@ -33,7 +33,7 @@ class GoodWe : public Component, public uart::UARTDevice {
   int idx_ = 0;
 
   // Timeout in milliseconds
-  uint32_t timeout_ = 100;
+  uint32_t timeout_ = 200;
 
   text_sensor::TextSensor *work_mode_sensor_{nullptr};
   sensor::Sensor *grid_voltage_sensor_{nullptr};
