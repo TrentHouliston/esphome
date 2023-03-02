@@ -4,8 +4,10 @@
 namespace esphome {
 namespace goodwe {
 
+/// The tag to use for logging
 static const char *const TAG = "goodwe.inverter";
 
+/// The packet to send to the inverter to request the current data
 const uint8_t request_packet[9] = {0xaa, 0x55, 0xab, 0x7f, 0x01, 0x01, 0x00, 0x02, 0x2b};
 
 uint16_t swap_endian(const uint16_t &v) {
@@ -15,7 +17,7 @@ uint16_t swap_endian(const uint16_t &v) {
 uint32_t swap_endian(const uint32_t &v) {
   // Swap endian
   return (v >> 24) | ((v << 8) & 0x00FF0000) | ((v >> 8) & 0x0000FF00) | (v << 24);
- }
+}
 
 template<typename T, T denominator> struct Data {
   T data;
@@ -60,7 +62,9 @@ void GoodWe::set_grid_voltage_sensor(sensor::Sensor *grid_voltage_sensor) {
 void GoodWe::set_grid_current_sensor(sensor::Sensor *grid_current_sensor) {
   this->grid_current_sensor_ = grid_current_sensor;
 }
-void GoodWe::set_grid_power_sensor(sensor::Sensor *grid_power_sensor) { this->grid_power_sensor_ = grid_power_sensor; }
+void GoodWe::set_grid_power_sensor(sensor::Sensor *grid_power_sensor) {  //
+  this->grid_power_sensor_ = grid_power_sensor;
+}
 void GoodWe::set_grid_frequency_sensor(sensor::Sensor *grid_frequency_sensor) {
   this->grid_frequency_sensor_ = grid_frequency_sensor;
 }
@@ -82,34 +86,108 @@ void GoodWe::set_temperature_sensor(sensor::Sensor *temperature_sensor) {
 
 void GoodWe::loop() {
   if (!this->available()) {
-    // TODO send the packet
+    // Send the request packet and reset our read index
+    this->write_array(request_packet, sizeof(request_packet));
+    idx = 0;
+    ESP_LOGD(TAG, "Sent request packet to inverter");
   } else {
     while (this->available()) {
-      // TODO read into the buffer until we reach 8 bytes
+      // Read the next byte until we have a full packet
+      this->read_byte(buffer + idx);
+      idx += 1;
+
+      // When we have a full packet, parse it
+      if (idx == sizeof(Response)) {
+        // Check the header
+        if (buffer[0] != 0xAA || buffer[1] != 0x55) {
+          ESP_LOGW(TAG, "Invalid header in response");
+          idx = 0;
+          return;
+        }
+
+        // Check the CRC
+        uint16_t crc = 0;
+        for (int i = 0; i < sizeof(Response) - 2; ++i) {
+          crc += buffer[i];
+        }
+        if (crc != swap_endian(((Response *) buffer)->crc)) {
+          ESP_LOGW(TAG, "Invalid CRC in response");
+          idx = 0;
+          return;
+        }
+
+        // Parse the response
+        Response *response = reinterpret_cast<Response *>(buffer);
+        ESP_LOGD(TAG, "Received response from inverter");
+
+        // Work mode
+        if (this->work_mode_sensor_ != nullptr) {
+          switch (swap_endian(response->work_mode)) {
+            case 0:
+              this->work_mode_sensor_->publish_state("Standby");
+              break;
+            case 1:
+              this->work_mode_sensor_->publish_state("Running");
+              break;
+            default:
+              this->work_mode_sensor_->publish_state("Error");
+              break;
+          }
+        }
+
+        // Grid voltage
+        if (this->grid_voltage_sensor_ != nullptr) {
+          this->grid_voltage_sensor_->publish_state(response->ac_grid_voltage);
+        }
+
+        // Grid current
+        if (this->grid_current_sensor_ != nullptr) {
+          this->grid_current_sensor_->publish_state(response->ac_grid_current);
+        }
+
+        // Grid power
+        if (this->grid_power_sensor_ != nullptr) {
+          this->grid_power_sensor_->publish_state(response->ac_grid_power);
+        }
+
+        // Grid frequency
+        if (this->grid_frequency_sensor_ != nullptr) {
+          this->grid_frequency_sensor_->publish_state(response->ac_grid_frequency);
+        }
+
+        // Solar string 1 voltage
+        if (this->solar_string_1_voltage_sensor_ != nullptr) {
+          this->solar_string_1_voltage_sensor_->publish_state(response->solar_string_1_voltage);
+        }
+
+        // Solar string 1 current
+        if (this->solar_string_1_current_sensor_ != nullptr) {
+          this->solar_string_1_current_sensor_->publish_state(response->solar_string_1_current);
+        }
+
+        // Solar string 2 voltage
+        if (this->solar_string_2_voltage_sensor_ != nullptr) {
+          this->solar_string_2_voltage_sensor_->publish_state(response->solar_string_2_voltage);
+        }
+
+        // Solar string 2 current
+        if (this->solar_string_2_current_sensor_ != nullptr) {
+          this->solar_string_2_current_sensor_->publish_state(response->solar_string_2_current);
+        }
+
+        // Temperature
+        if (this->temperature_sensor_ != nullptr) {
+          this->temperature_sensor_->publish_state(response->temperature);
+        }
+
+        // Reset our read index
+        idx = 0;
+      }
     }
   }
-  // TODO if not available send next packet
-
-  // TODO read while available
-
-  // DataPacket buffer;
-  if (!this->available()) {
-    return;
-  }
-  // if (read_array((uint8_t *) &buffer, sizeof(buffer))) {
-  //   if (validate_checksum(&buffer)) {
-  //     received_package_(&buffer);
-  //   }
-  // } else {
-  //   ESP_LOGW(TAG, "Junk on wire. Throwing away partial message");
-  //   while (read() >= 0)
-  //     ;
-  // }
 }
 
-void GoodWe::setup() {
-  // TODO build all the packets to send
-}
+void GoodWe::setup() {}
 
 void GoodWe::dump_config() {  // NOLINT(readability-function-cognitive-complexity)
   ESP_LOGCONFIG(TAG, "GoodWe:");

@@ -27,6 +27,9 @@ class GoodWe : public Component, public uart::UARTDevice {
   void dump_config() override;
 
  protected:
+  int idx = 0;
+  uint8_t buffer[255];
+
   text_sensor::TextSensor *work_mode_sensor_{nullptr};
   sensor::Sensor *grid_voltage_sensor_{nullptr};
   sensor::Sensor *grid_current_sensor_{nullptr};
@@ -38,5 +41,5 @@ class GoodWe : public Component, public uart::UARTDevice {
   sensor::Sensor *solar_string_2_current_sensor_{nullptr};
   sensor::Sensor *temperature_sensor_{nullptr};
 };
-}  // namespace abb_aurora
+}  // namespace goodwe
 }  // namespace esphome
