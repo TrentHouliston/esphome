@@ -128,19 +128,19 @@ async def to_code(config):
     if CONF_GRID_VOLTAGE in config:
         conf = config[CONF_GRID_VOLTAGE]
         sens = await sensor.new_sensor(conf)
-        cg.add(var.set_voltage_sensor(sens))
+        cg.add(var.set_grid_voltage_sensor(sens))
     if CONF_GRID_CURRENT in config:
         conf = config[CONF_GRID_CURRENT]
         sens = await sensor.new_sensor(conf)
-        cg.add(var.set_current_sensor(sens))
+        cg.add(var.set_grid_current_sensor(sens))
     if CONF_GRID_POWER in config:
         conf = config[CONF_GRID_POWER]
         sens = await sensor.new_sensor(conf)
-        cg.add(var.set_power_sensor(sens))
+        cg.add(var.set_grid_power_sensor(sens))
     if CONF_GRID_FREQUENCY in config:
         conf = config[CONF_GRID_FREQUENCY]
         sens = await sensor.new_sensor(conf)
-        cg.add(var.set_frequency_sensor(sens))
+        cg.add(var.set_grid_frequency_sensor(sens))
     if CONF_SOLAR_VOLTAGE in config:
         conf = config[CONF_SOLAR_VOLTAGE]
         sens = await sensor.new_sensor(conf)
