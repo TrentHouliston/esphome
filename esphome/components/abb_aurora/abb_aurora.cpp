@@ -60,10 +60,18 @@ void ABBAurora::loop() {
     this->idx_ = 0;
     this->processors_idx_ = (this->processors_idx_ + 1) % this->processors_.size();
     const auto &request = processors_[this->processors_idx_].request_;
+
+    // Convert the request packet into space separated hex values
+    char request_str[2 * sizeof(request) + 1];
+    for (size_t i = 0; i < sizeof(request); i++) {
+      sprintf(request_str + 2 * i, "%02X", reinterpret_cast<const uint8_t *>(&request)[i]);
+    }
+
     this->write_array(request, sizeof(request));
     this->idle_ = false;
     this->last_request_time_ = now;
     ESP_LOGVV(TAG, "Sent request packet to inverter");
+    ESP_LOGD(TAG, request_str);
   } else {
     while (this->available()) {
       // Read into the buffer until we reach 10 bytes (all return packets are 6 bytes + crc)
