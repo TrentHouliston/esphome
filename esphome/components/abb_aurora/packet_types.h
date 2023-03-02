@@ -23,7 +23,8 @@ inline uint16_t crc(const void *data, int len) {
     lo = (lo ^ t);
   }
 
-  return (~hi & 0xFF << 8) | (~lo & 0xFF);
+  // Swap to return big endian
+  (~hi & 0xFF) | ((~lo & 0xFF) << 8);
 }
 
 struct RequestState {

@@ -88,6 +88,10 @@ void GoodWe::loop() {
   // If we are idle or we timed out, send a request packet
   uint32_t now = millis();
   if (!this->available() && (this->idle_ || (now - this->last_request_time_) > this->timeout_)) {
+    if ((now - this->last_request_time_) > this->timeout_) {
+      ESP_LOGW(TAG, "Timed out waiting for response");
+    }
+
     // Send the request packet and reset our read index
     this->write_array(request_packet, sizeof(request_packet));
     this->last_request_time_ = now;

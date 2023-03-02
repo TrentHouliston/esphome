@@ -52,6 +52,10 @@ void ABBAurora::set_fan_speed_sensor(sensor::Sensor *fan_speed_sensor) {  //
 void ABBAurora::loop() {
   uint32_t now = millis();
   if (!this->available() && (this->idle_ || now - this->last_request_ > this->timeout_)) {
+    if ((now - this->last_request_time_) > this->timeout_) {
+      ESP_LOGW(TAG, "Timed out waiting for response");
+    }
+
     // Reset buffers and send the next packet in the sequence
     this->idx_ = 0;
     this->processors_idx_ = (this->processors_idx_ + 1) % this->processors_.size();
