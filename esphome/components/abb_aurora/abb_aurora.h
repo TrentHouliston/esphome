@@ -15,7 +15,7 @@ class ABBAurora : public Component, public uart::UARTDevice {
     uint8_t global_state;
     uint8_t data_[4];
     uint16_t crc;
-  };
+  } __attribute__((packed));
 
   void set_global_state_sensor(text_sensor::TextSensor *global_state_sensor);
   void set_grid_voltage_sensor(sensor::Sensor *grid_voltage_sensor);
