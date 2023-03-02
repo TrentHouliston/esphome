@@ -26,29 +26,29 @@ template<typename T, T denominator> struct Data {
 
 // Data is big endian
 struct Response {
-  uint8_t header[2];  // Should be 0xAA 0x55
-  uint8_t from;
-  uint8_t to;
-  uint8_t command;
-  uint8_t subcommand;
-  uint8_t length;
-  Data<uint16_t, 10> solar_string_1_voltage;
-  Data<uint16_t, 10> solar_string_2_voltage;
-  Data<uint16_t, 10> solar_string_1_current;
-  Data<uint16_t, 10> solar_string_2_current;
-  Data<uint16_t, 10> ac_grid_voltage;
-  Data<uint16_t, 10> ac_grid_current;
-  Data<uint16_t, 100> ac_grid_frequency;
-  Data<uint16_t, 1> ac_grid_power;
-  uint16_t work_mode;
-  Data<uint16_t, 10> temperature;
-  char unknown1[4];
-  Data<uint32_t, 10> lifetime_energy_total;
-  Data<uint32_t, 1> hours_total;
-  char unknown2[12];
-  uint16_t daily_energy;
-  char unkonwn3[14];
-  uint16_t crc;
+  uint8_t header_[2];  // Should be 0xAA 0x55
+  uint8_t from_;
+  uint8_t to_;
+  uint8_t command_;
+  uint8_t subcommand_;
+  uint8_t length_;
+  Data<uint16_t, 10> solar_string_1_voltage_;
+  Data<uint16_t, 10> solar_string_2_voltage_;
+  Data<uint16_t, 10> solar_string_1_current_;
+  Data<uint16_t, 10> solar_string_2_current_;
+  Data<uint16_t, 10> ac_grid_voltage_;
+  Data<uint16_t, 10> ac_grid_current_;
+  Data<uint16_t, 100> ac_grid_frequency_;
+  Data<uint16_t, 1> ac_grid_power_;
+  uint16_t work_mode_;
+  Data<uint16_t, 10> temperature_;
+  char unknown1_[4];
+  Data<uint32_t, 10> lifetime_energy_total_;
+  Data<uint32_t, 1> hours_total_;
+  char unknown2_[12];
+  uint16_t daily_energy_;
+  char unkonwn3_[14];
+  uint16_t checksum_;
 } __attribute__((packed));
 
 static_assert(sizeof(Response) == 69, "The response is the incorrect size");
@@ -85,54 +85,58 @@ void GoodWe::set_temperature_sensor(sensor::Sensor *temperature_sensor) {
 }
 
 void GoodWe::loop() {
-  if (!this->available()) {
+  // If we are idle or we timed out, send a request packet
+  uint32_t now = millis();
+  if (!this->available() && (this->idle_ || (now - this->last_request_time_) > this->timeout_)) {
     // Send the request packet and reset our read index
     this->write_array(request_packet, sizeof(request_packet));
-    idx = 0;
+    this->last_request_time_ = now;
+    this->idx_ = 0;
     ESP_LOGVV(TAG, "Sent request packet to inverter");
   } else {
     while (this->available()) {
       // Read the next byte until we have a full packet
-      this->read_byte(buffer + idx);
-      idx += 1;
+      this->read_byte(this->buffer_ + this->idx_);
+      this->idx_ += 1;
 
       // When we have a full packet, parse it
-      if (idx == sizeof(Response)) {
+      if (this->idx_ == sizeof(Response)) {
         // Reset for next packet
-        idx = 0;
+        this->idx_ = 0;
+        this->idle_ = true;
 
         // Check the header
-        if (buffer[0] != 0xAA || buffer[1] != 0x55) {
+        if (this->buffer_[0] != 0xAA || this->buffer_[1] != 0x55) {
           ESP_LOGW(TAG, "Invalid header in response");
           return;
         }
 
-        // Check the CRC
-        uint16_t crc = 0;
+        // Check the checksum
+        uint16_t checksum = 0;
         for (int i = 0; i < sizeof(Response) - 2; ++i) {
-          crc += buffer[i];
+          checksum += this->buffer_[i];
         }
-        if (crc != swap_endian(((Response *) buffer)->crc)) {
-          ESP_LOGW(TAG, "Invalid CRC in response");
+        if (checksum != swap_endian(((Response *) this->buffer_)->checksum_)) {
+          ESP_LOGW(TAG, "Invalid checksum in response");
           return;
         }
 
         // Parse the response
-        Response *response = reinterpret_cast<Response *>(buffer);
+        Response *response = reinterpret_cast<Response *>(this->buffer_);
         ESP_LOGVV(TAG, "Received response from inverter");
 
         // Check all the deduplications and if any have changed, send everything
         bool changed = false;
-        changed |= this->work_mode_dedup_.next(response->work_mode);
-        changed |= this->grid_voltage_dedup_.next(response->ac_grid_voltage);
-        changed |= this->grid_current_dedup_.next(response->ac_grid_current);
-        changed |= this->grid_power_dedup_.next(response->ac_grid_power);
-        changed |= this->grid_frequency_dedup_.next(response->ac_grid_frequency);
-        changed |= this->solar_string_1_voltage_dedup_.next(response->solar_string_1_voltage);
-        changed |= this->solar_string_1_current_dedup_.next(response->solar_string_1_current);
-        changed |= this->solar_string_2_voltage_dedup_.next(response->solar_string_2_voltage);
-        changed |= this->solar_string_2_current_dedup_.next(response->solar_string_2_current);
-        changed |= this->temperature_dedup_.next(response->temperature);
+        changed |= this->work_mode_dedup_.next(response->work_mode_);
+        changed |= this->grid_voltage_dedup_.next(response->ac_grid_voltage_);
+        changed |= this->grid_current_dedup_.next(response->ac_grid_current_);
+        changed |= this->grid_power_dedup_.next(response->ac_grid_power_);
+        changed |= this->grid_frequency_dedup_.next(response->ac_grid_frequency_);
+        changed |= this->solar_string_1_voltage_dedup_.next(response->solar_string_1_voltage_);
+        changed |= this->solar_string_1_current_dedup_.next(response->solar_string_1_current_);
+        changed |= this->solar_string_2_voltage_dedup_.next(response->solar_string_2_voltage_);
+        changed |= this->solar_string_2_current_dedup_.next(response->solar_string_2_current_);
+        changed |= this->temperature_dedup_.next(response->temperature_);
         if (!changed) {
           return;
         }
@@ -154,47 +158,47 @@ void GoodWe::loop() {
 
         // Grid voltage
         if (this->grid_voltage_sensor_ != nullptr) {
-          this->grid_voltage_sensor_->publish_state(response->ac_grid_voltage);
+          this->grid_voltage_sensor_->publish_state(response->ac_grid_voltage_);
         }
 
         // Grid current
         if (this->grid_current_sensor_ != nullptr) {
-          this->grid_current_sensor_->publish_state(response->ac_grid_current);
+          this->grid_current_sensor_->publish_state(response->ac_grid_current_);
         }
 
         // Grid power
         if (this->grid_power_sensor_ != nullptr) {
-          this->grid_power_sensor_->publish_state(response->ac_grid_power);
+          this->grid_power_sensor_->publish_state(response->ac_grid_power_);
         }
 
         // Grid frequency
         if (this->grid_frequency_sensor_ != nullptr) {
-          this->grid_frequency_sensor_->publish_state(response->ac_grid_frequency);
+          this->grid_frequency_sensor_->publish_state(response->ac_grid_frequency_);
         }
 
         // Solar string 1 voltage
         if (this->solar_string_1_voltage_sensor_ != nullptr) {
-          this->solar_string_1_voltage_sensor_->publish_state(response->solar_string_1_voltage);
+          this->solar_string_1_voltage_sensor_->publish_state(response->solar_string_1_voltage_);
         }
 
         // Solar string 1 current
         if (this->solar_string_1_current_sensor_ != nullptr) {
-          this->solar_string_1_current_sensor_->publish_state(response->solar_string_1_current);
+          this->solar_string_1_current_sensor_->publish_state(response->solar_string_1_current_);
         }
 
         // Solar string 2 voltage
         if (this->solar_string_2_voltage_sensor_ != nullptr) {
-          this->solar_string_2_voltage_sensor_->publish_state(response->solar_string_2_voltage);
+          this->solar_string_2_voltage_sensor_->publish_state(response->solar_string_2_voltage_);
         }
 
         // Solar string 2 current
         if (this->solar_string_2_current_sensor_ != nullptr) {
-          this->solar_string_2_current_sensor_->publish_state(response->solar_string_2_current);
+          this->solar_string_2_current_sensor_->publish_state(response->solar_string_2_current_);
         }
 
         // Temperature
         if (this->temperature_sensor_ != nullptr) {
-          this->temperature_sensor_->publish_state(response->temperature);
+          this->temperature_sensor_->publish_state(response->temperature_);
         }
       }
     }

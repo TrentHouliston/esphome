@@ -27,8 +27,13 @@ class GoodWe : public Component, public uart::UARTDevice {
   void dump_config() override;
 
  protected:
-  int idx = 0;
-  uint8_t buffer[255];
+  uint32_t last_request_time_ = 0;
+  bool idle_ = true;
+  uint8_t buffer_[255];
+  int idx_ = 0;
+
+  // Timeout in milliseconds
+  uint32_t timeout_ = 100;
 
   text_sensor::TextSensor *work_mode_sensor_{nullptr};
   sensor::Sensor *grid_voltage_sensor_{nullptr};
