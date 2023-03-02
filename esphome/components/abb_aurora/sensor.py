@@ -38,93 +38,89 @@ CONF_BOOSTER_TEMPERATURE = "booster_temperature"
 CONF_FAN_SPEED = "fan_speed"
 
 abb_aurora_ns = cg.esphome_ns.namespace("abb_aurora")
-ABBAurora = abb_aurora_ns.class_("ABBAurora", uart.UARTDevice)
+ABBAurora = abb_aurora_ns.class_("ABBAurora", uart.UARTDevice, cg.Component)
 
-CONFIG_SCHEMA = (
-    cv.Schema(
-        {
-            cv.GenerateID(): cv.declare_id(ABBAurora),
-            cv.Optional(CONF_GLOBAL_STATE): text_sensor.text_sensor_schema(),
-            cv.Optional(CONF_INVERTER_STATE): text_sensor.text_sensor_schema(),
-            cv.Optional(CONF_DC_DC_CHANNEL_1_STATE): text_sensor.text_sensor_schema(),
-            cv.Optional(CONF_DC_DC_CHANNEL_2_STATE): text_sensor.text_sensor_schema(),
-            cv.Optional(CONF_ALARMS): text_sensor.text_sensor_schema(),
-            cv.Optional(CONF_GRID_VOLTAGE): sensor.sensor_schema(
-                unit_of_measurement=UNIT_VOLT,
-                accuracy_decimals=1,
-                device_class=DEVICE_CLASS_VOLTAGE,
-                state_class=STATE_CLASS_MEASUREMENT,
-            ),
-            cv.Optional(CONF_GRID_CURRENT): sensor.sensor_schema(
-                unit_of_measurement=UNIT_AMPERE,
-                accuracy_decimals=1,
-                device_class=DEVICE_CLASS_CURRENT,
-                state_class=STATE_CLASS_MEASUREMENT,
-            ),
-            cv.Optional(CONF_GRID_POWER): sensor.sensor_schema(
-                unit_of_measurement=UNIT_WATT,
-                accuracy_decimals=1,
-                device_class=DEVICE_CLASS_POWER,
-                state_class=STATE_CLASS_MEASUREMENT,
-            ),
-            cv.Optional(CONF_GRID_FREQUENCY): sensor.sensor_schema(
-                unit_of_measurement=UNIT_HERTZ,
-                accuracy_decimals=2,
-                device_class=DEVICE_CLASS_FREQUENCY,
-            ),
-            cv.Optional(CONF_SOLAR_VOLTAGE): sensor.sensor_schema(
-                unit_of_measurement=UNIT_VOLT,
-                accuracy_decimals=1,
-                device_class=DEVICE_CLASS_VOLTAGE,
-                state_class=STATE_CLASS_MEASUREMENT,
-            ),
-            cv.Optional(CONF_SOLAR_CURRENT): sensor.sensor_schema(
-                unit_of_measurement=UNIT_AMPERE,
-                accuracy_decimals=1,
-                device_class=DEVICE_CLASS_CURRENT,
-                state_class=STATE_CLASS_MEASUREMENT,
-            ),
-            cv.Optional(CONF_SOLAR_POWER): sensor.sensor_schema(
-                unit_of_measurement=UNIT_WATT,
-                accuracy_decimals=1,
-                device_class=DEVICE_CLASS_POWER,
-                state_class=STATE_CLASS_MEASUREMENT,
-            ),
-            cv.Optional(CONF_BOOSTER_VOLTAGE): sensor.sensor_schema(
-                unit_of_measurement=UNIT_VOLT,
-                accuracy_decimals=1,
-                device_class=DEVICE_CLASS_VOLTAGE,
-                state_class=STATE_CLASS_MEASUREMENT,
-            ),
-            cv.Optional(CONF_BOOSTER_MIDPOINT_VOLTAGE): sensor.sensor_schema(
-                unit_of_measurement=UNIT_VOLT,
-                accuracy_decimals=1,
-                device_class=DEVICE_CLASS_VOLTAGE,
-                state_class=STATE_CLASS_MEASUREMENT,
-            ),
-            cv.Optional(CONF_INVERTER_TEMPERATURE): sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                accuracy_decimals=1,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                state_class=STATE_CLASS_MEASUREMENT,
-            ),
-            cv.Optional(CONF_BOOSTER_TEMPERATURE): sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                accuracy_decimals=1,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                state_class=STATE_CLASS_MEASUREMENT,
-            ),
-            cv.Optional(CONF_FAN_SPEED): sensor.sensor_schema(
-                unit_of_measurement=UNIT_PULSES_PER_MINUTE,
-                accuracy_decimals=0,
-                device_class=DEVICE_CLASS_FREQUENCY,
-                state_class=STATE_CLASS_MEASUREMENT,
-            ),
-        }
-    )
-    .extend(cv.polling_component_schema("60s"))
-    .extend(uart.UART_DEVICE_SCHEMA)
-)
+CONFIG_SCHEMA = cv.Schema(
+    {
+        cv.GenerateID(): cv.declare_id(ABBAurora),
+        cv.Optional(CONF_GLOBAL_STATE): text_sensor.text_sensor_schema(),
+        cv.Optional(CONF_INVERTER_STATE): text_sensor.text_sensor_schema(),
+        cv.Optional(CONF_DC_DC_CHANNEL_1_STATE): text_sensor.text_sensor_schema(),
+        cv.Optional(CONF_DC_DC_CHANNEL_2_STATE): text_sensor.text_sensor_schema(),
+        cv.Optional(CONF_ALARMS): text_sensor.text_sensor_schema(),
+        cv.Optional(CONF_GRID_VOLTAGE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_GRID_CURRENT): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_GRID_POWER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_WATT,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_POWER,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_GRID_FREQUENCY): sensor.sensor_schema(
+            unit_of_measurement=UNIT_HERTZ,
+            accuracy_decimals=2,
+            device_class=DEVICE_CLASS_FREQUENCY,
+        ),
+        cv.Optional(CONF_SOLAR_VOLTAGE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_SOLAR_CURRENT): sensor.sensor_schema(
+            unit_of_measurement=UNIT_AMPERE,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_CURRENT,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_SOLAR_POWER): sensor.sensor_schema(
+            unit_of_measurement=UNIT_WATT,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_POWER,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_BOOSTER_VOLTAGE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_BOOSTER_MIDPOINT_VOLTAGE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_VOLT,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_VOLTAGE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_INVERTER_TEMPERATURE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_BOOSTER_TEMPERATURE): sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            accuracy_decimals=1,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+        cv.Optional(CONF_FAN_SPEED): sensor.sensor_schema(
+            unit_of_measurement=UNIT_PULSES_PER_MINUTE,
+            accuracy_decimals=0,
+            device_class=DEVICE_CLASS_FREQUENCY,
+            state_class=STATE_CLASS_MEASUREMENT,
+        ),
+    }
+).extend(uart.UART_DEVICE_SCHEMA)
 
 
 async def to_code(config):
