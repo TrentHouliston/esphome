@@ -5,7 +5,7 @@
 namespace esphome {
 namespace abb_aurora {
 
-uint16_t crc(const void *data, int len) {
+inline uint16_t crc(const void *data, int len) {
   uint8_t lo = 0xFF;
   uint8_t hi = 0xFF;
 
