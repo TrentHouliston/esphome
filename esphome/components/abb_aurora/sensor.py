@@ -20,10 +20,6 @@ from esphome.const import (
 DEPENDENCIES = ["uart"]
 
 CONF_GLOBAL_STATE = "global_state"
-CONF_INVERTER_STATE = "inverter_state"
-CONF_DC_DC_CHANNEL_1_STATE = "dc_dc_channel_1_state"
-CONF_DC_DC_CHANNEL_2_STATE = "dc_dc_channel_2_state"
-CONF_ALARMS = "alarms"
 CONF_GRID_VOLTAGE = "grid_voltage"
 CONF_GRID_CURRENT = "grid_current"
 CONF_GRID_POWER = "grid_power"
@@ -44,10 +40,6 @@ CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(): cv.declare_id(ABBAurora),
         cv.Optional(CONF_GLOBAL_STATE): text_sensor.text_sensor_schema(),
-        cv.Optional(CONF_INVERTER_STATE): text_sensor.text_sensor_schema(),
-        cv.Optional(CONF_DC_DC_CHANNEL_1_STATE): text_sensor.text_sensor_schema(),
-        cv.Optional(CONF_DC_DC_CHANNEL_2_STATE): text_sensor.text_sensor_schema(),
-        cv.Optional(CONF_ALARMS): text_sensor.text_sensor_schema(),
         cv.Optional(CONF_GRID_VOLTAGE): sensor.sensor_schema(
             unit_of_measurement=UNIT_VOLT,
             accuracy_decimals=1,
@@ -132,22 +124,6 @@ async def to_code(config):
         conf = config[CONF_GLOBAL_STATE]
         ts = await text_sensor.new_text_sensor(conf)
         cg.add(var.set_global_state(ts))
-    if CONF_INVERTER_STATE in config:
-        conf = config[CONF_INVERTER_STATE]
-        ts = await text_sensor.new_text_sensor(conf)
-        cg.add(var.set_inverter_state(ts))
-    if CONF_DC_DC_CHANNEL_1_STATE in config:
-        conf = config[CONF_DC_DC_CHANNEL_1_STATE]
-        ts = await text_sensor.new_text_sensor(conf)
-        cg.add(var.set_dc_dc_channel_1_state(ts))
-    if CONF_DC_DC_CHANNEL_2_STATE in config:
-        conf = config[CONF_DC_DC_CHANNEL_2_STATE]
-        ts = await text_sensor.new_text_sensor(conf)
-        cg.add(var.set_dc_dc_channel_2_state(ts))
-    if CONF_ALARMS in config:
-        conf = config[CONF_ALARMS]
-        ts = await text_sensor.new_text_sensor(conf)
-        cg.add(var.set_alarms(ts))
 
     if CONF_GRID_VOLTAGE in config:
         conf = config[CONF_GRID_VOLTAGE]

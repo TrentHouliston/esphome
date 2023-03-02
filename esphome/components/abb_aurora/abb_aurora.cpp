@@ -1,123 +1,17 @@
 #include "abb_aurora.h"
 #include "esphome/core/log.h"
+#include "strings.h"
+#include "packet_types.h"
 
 namespace esphome {
 namespace abb_aurora {
 
-uint16_t crc(void *data, int len) {
-  uint8_t lo = 0xFF;
-  uint8_t hi = 0xFF;
-
-  for (int i = 0; i < len; i++) {
-    uint8_t d = ((uint8_t *) data)[i];
-    uint8_t n = (d ^ lo);
-    uint8_t t = (n << 4);
-    n = (t ^ n);
-    t = (n >> 5);
-    lo = hi;
-    hi = (n ^ t);
-    t = (n << 3);
-    lo = (lo ^ t);
-    t = (n >> 4);
-    lo = (lo ^ t);
-  }
-
-  return ~lo & 0xFF, ~hi & 0xFF;
-}
-
-struct RequestState {
-  char address_;
-  char command = 50;
-  char reserved_[6] = {0, 0, 0, 0, 0, 0};
-  uint16_t crc_;
-} __attribute__((packed));
-// Response { tr_state, global_state, inverter_state, dc_dc1_state, dc_dc2_state, alarm_state, crc_l, crc_h}
-
-struct RequestPN {
-  char address_;
-  char command = 52;
-  char reserved_[6] = {0, 0, 0, 0, 0, 0};
-  uint16_t crc_;
-} __attribute__((packed));
-// Response { char6, char5, char4, char3, char2, char1, crc_l, crc_h}
-
-struct RequestVersion {
-  char address_;
-  char command = 58;
-  char reserved_[6] = {0, 0, 0, 0, 0, 0};
-  uint16_t crc_;
-} __attribute__((packed));
-
-// Response { trans_state, global_state, par1, par2, par3, par4, crc_l, crc_h}
-/// Par 1 Indoor/Outdoor and type
-// ‘i’ Aurora 2 kW indoor
-// ‘o’ Aurora 2 kW outdoor
-// ‘I’ Aurora 3.6 kW indoor
-// ‘O’ Aurora 3.0-3.6 kW outdoor
-// ‘5’ Aurora 5.0 kW outdoor
-// ‘6’ Aurora 6 kW outdoor
-// ‘P’ 3-phase interface (3G74)
-// ‘C’ Aurora 50kW module
-// ‘4’ Aurora 4.2kW new
-// ‘3’ Aurora 3.6kW new
-// ‘2’ Aurora 3.3kW new
-// ‘1’ Aurora 3.0kW new
-// ‘D’ Aurora 12.0kW
-// ‘X’ Aurora 10.0kW
-// Par 2 Grid Standard
-// ‘A’ UL1741
-// ‘E’ VDE0126
-// ‘S’ DR 1663/2000
-// ‘I’ ENEL DK 5950
-// ‘U’ UK G83
-// ‘K’ AS 4777
-// Par 3 Trafo/Non Trafo
-// ‘N’ Transformerless Version
-// ‘T’ Transformer Version
-// Par 4 Wind/PV
-// ‘W’ Wind version
-// ‘N’ PV version
-
-struct RequestMeasure {
-  char address_;
-  char command = 59;
-  char type_;
-  char global_;
-  char reserved_[4] = {0, 0, 0, 0};
-  uint16_t crc_;
-} __attribute__((packed));
-// Response { trans_state, global_state, v_float, crc_l, crc_h}
-
-struct RequestSerialNumber {
-  char address_;
-  char command = 63;
-  char reserved_[6] = {0, 0, 0, 0, 0, 0};
-  uint16_t crc_;
-} __attribute__((packed));
-// Response { char6, char5, char4, char3, char2, char1, crc_l, crc_h}
-
-struct RequestManufacturingWeekAndYear {
-  char address_;
-  char command = 65;
-  char reserved_[6] = {0, 0, 0, 0, 0, 0};
-  uint16_t crc_;
-} __attribute__((packed));
-// Response { TR.State, GlobalState, week2, week1, year2, year1, crc_l, crc_h}
+/// The tag to use for logging
+static const char *const TAG = "abb_aurora.inverter";
 
 void ABBAurora::set_global_state_sensor(text_sensor::TextSensor *global_state_sensor) {
   global_state_sensor_ = global_state_sensor;
 }
-void ABBAurora::set_inverter_state_sensor(text_sensor::TextSensor *inverter_state_sensor) {
-  inverter_state_sensor_ = inverter_state_sensor;
-}
-void ABBAurora::set_dc_dc_channel_1_state_sensor(text_sensor::TextSensor *dc_dc_channel_1_state_sensor) {
-  dc_dc_channel_1_state_sensor_ = dc_dc_channel_1_state_sensor;
-}
-void ABBAurora::set_dc_dc_channel_2_state_sensor(text_sensor::TextSensor *dc_dc_channel_2_state_sensor) {
-  dc_dc_channel_2_state_sensor_ = dc_dc_channel_2_state_sensor;
-}
-void ABBAurora::set_alarms_sensor(text_sensor::TextSensor *alarms_sensor) { alarms_sensor_ = alarms_sensor; }
-
 void ABBAurora::set_grid_voltage_sensor(sensor::Sensor *grid_voltage_sensor) {
   grid_voltage_sensor_ = grid_voltage_sensor;
 }
@@ -156,23 +50,83 @@ void ABBAurora::set_fan_speed_sensor(sensor::Sensor *fan_speed_sensor) {  //
 }
 
 void ABBAurora::loop() {
-  if (!this->available()) {
-    // TODO send the packet
+  uint32_t now = millis();
+  if (!this->available() && (this->idle_ || now - this->last_request_ > this->timeout_)) {
+    // Reset buffers and send the next packet in the sequence
+    this->idx_ = 0;
+    this->processors_idx_ = (this->processors_idx_ + 1) % this->processors_.size();
+    const auto &request = processors_[this->processors_idx_].request_;
+    this->write_array(request, sizeof(request));
   } else {
     while (this->available()) {
-      // TODO read into the buffer until we reach 8 bytes
+      // Read into the buffer until we reach 10 bytes (all return packets are 6 bytes + crc)
+      this->read_byte(this->buffer_ + this->idx_);
+      this->idx_ += 1;
+
+      if (this->idx_ == 8) {
+        // We have a full packet, process it
+        this->idx_ = 0;
+        this->idle_ = true;
+
+        Response *response = reinterpret_cast<Response *>(this->buffer_);
+
+        // Check the CRC
+        if (response->crc != crc(this->buffer_, sizeof(this->buffer_) - 2)) {
+          ESP_LOGW(TAG, "Invalid CRC!");
+          return;
+        }
+
+        // Check the transmit state
+        if (response->transmit_state != 0x00) {
+          ESP_LOGW(TAG, "Invalid transmit state!", transmission_state(response->transmit_state));
+          return;
+        }
+
+        // Check and transmit the global state
+        if (this->global_state_sensor_ != nullptr) {
+          this->global_state_sensor_->publish_state(global_state(response->global_state));
+        }
+
+        // Process the packet using the appropriate processor
+        const auto &process = processors_[this->processors_idx_].process_;
+        process(*response);
+      }
     }
   }
+}
+
+void ABBAurora::setup() {
+  // Go through each sensor and make a packet processor for it
+  auto create_process = [&](sensor::Sensor *ABBAurora::*ptr, uint8_t measure_type) {
+    if (this->*ptr != nullptr) {
+      this->processors_.emplace_back();
+      auto &v = this->processors_.back();
+      new (v.request_) RequestMeasure(this->address_, measure_type, true);
+      v.process_ = [this, ptr](const Response &buffer) {
+        float v = *reinterpret_cast<const float *>(buffer.data_);
+        (this->*ptr)->publish_state(v);
+      };
+    }
+  };
+
+  create_process(&ABBAurora::grid_voltage_sensor_, 1);
+  create_process(&ABBAurora::grid_current_sensor_, 2);
+  create_process(&ABBAurora::grid_power_sensor_, 3);
+  create_process(&ABBAurora::grid_frequency_sensor_, 4);
+  create_process(&ABBAurora::solar_voltage_sensor_, 23);
+  create_process(&ABBAurora::solar_current_sensor_, 25);
+  create_process(&ABBAurora::solar_power_sensor_, 8);
+  create_process(&ABBAurora::booster_voltage_sensor_, 5);
+  create_process(&ABBAurora::booster_midpoint_voltage_sensor_, 33);
+  create_process(&ABBAurora::inverter_temperature_sensor_, 21);
+  create_process(&ABBAurora::booster_temperature_sensor_, 22);
+  create_process(&ABBAurora::fan_speed_sensor_, 54);
 }
 
 void ABBAurora::dump_config() {  // NOLINT(readability-function-cognitive-complexity)
   ESP_LOGCONFIG(TAG, "ABBAurora:");
 
   LOG_TEXT_SENSOR("  ", "Global State", this->global_state_sensor_);
-  LOG_TEXT_SENSOR("  ", "Inverter State", this->inverter_state_sensor_);
-  LOG_TEXT_SENSOR("  ", "DC/DC Channel 1 State", this->dc_dc_channel_1_state_sensor_);
-  LOG_TEXT_SENSOR("  ", "DC/DC Channel 2 State", this->dc_dc_channel_2_state_sensor_);
-  LOG_TEXT_SENSOR("  ", "Alarms", this->alarms_sensor_);
 
   LOG_SENSOR("  ", "Grid Voltage", this->grid_voltage_sensor_);
   LOG_SENSOR("  ", "Grid Current", this->grid_current_sensor_);
