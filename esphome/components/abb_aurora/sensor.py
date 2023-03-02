@@ -1,19 +1,18 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import sensor, uart, text_sensor
+from esphome.components import sensor, text_sensor, uart
 from esphome.const import (
+    CONF_ID,
     DEVICE_CLASS_CURRENT,
-    DEVICE_CLASS_ENERGY,
+    DEVICE_CLASS_FREQUENCY,
     DEVICE_CLASS_POWER,
+    DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
     STATE_CLASS_MEASUREMENT,
-    DEVICE_CLASS_FREQUENCY,
-    DEVICE_CLASS_TEMPERATURE,
     UNIT_AMPERE,
-    UNIT_KILOWATT_HOURS,
     UNIT_CELSIUS,
     UNIT_HERTZ,
-    CONF_ID,
+    UNIT_PULSES_PER_MINUTE,
     UNIT_VOLT,
     UNIT_WATT,
 )
@@ -116,9 +115,9 @@ CONFIG_SCHEMA = (
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
             cv.Optional(CONF_FAN_SPEED): sensor.sensor_schema(
-                unit_of_measurement=UNIT_RPM,
+                unit_of_measurement=UNIT_PULSES_PER_MINUTE,
                 accuracy_decimals=0,
-                device_class=DEVICE_CLASS_SPEED,
+                device_class=DEVICE_CLASS_FREQUENCY,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
         }
