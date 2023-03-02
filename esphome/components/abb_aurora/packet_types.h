@@ -23,8 +23,7 @@ inline uint16_t crc(const void *data, int len) {
     lo = (lo ^ t);
   }
 
-  // Swap to return big endian
-  return (~hi & 0xFF) | ((~lo & 0xFF) << 8);
+  return ((~hi & 0xFF) << 8) | (~lo & 0xFF);
 }
 
 struct RequestMeasure {
