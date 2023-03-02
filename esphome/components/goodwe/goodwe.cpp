@@ -143,7 +143,7 @@ void GoodWe::loop() {
 
         // Work mode
         if (this->work_mode_sensor_ != nullptr) {
-          switch (swap_endian(response->work_mode)) {
+          switch (swap_endian(response->work_mode_)) {
             case 0:
               this->work_mode_sensor_->publish_state("Standby");
               break;
