@@ -104,6 +104,9 @@ void GoodWe::loop() {
       this->read_byte(this->buffer_ + this->idx_);
       this->idx_ += 1;
 
+      // While we are reading bytes we don't time out
+      this->last_request_time_ = now;
+
       // When we have a full packet, parse it
       if (this->idx_ == sizeof(Response)) {
         // Reset for next packet
