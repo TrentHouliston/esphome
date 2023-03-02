@@ -1,6 +1,6 @@
 #include <cstdint>
 
-const char *transmission_state(uint8_t state) {
+inline const char *transmission_state(uint8_t state) {
   switch (state) {
     case 0:
       return "OK";
@@ -25,7 +25,7 @@ const char *transmission_state(uint8_t state) {
   }
 }
 
-const char *global_state(uint8_t state) {
+inline const char *global_state(uint8_t state) {
   switch (state) {
     case 0:
       return "Sending parameters";
@@ -114,7 +114,7 @@ const char *global_state(uint8_t state) {
   }
 }
 
-const char *dc_dc_state(uint8_t state) {
+inline const char *dc_dc_state(uint8_t state) {
   switch (state) {
     case 0:
       return "DC DC off";
@@ -161,7 +161,7 @@ const char *dc_dc_state(uint8_t state) {
   }
 }
 
-const char *inverter_state(uint8_t state) {
+inline const char *inverter_state(uint8_t state) {
   switch (state) {
     case 0:
       return "Standby";
@@ -247,7 +247,7 @@ const char *inverter_state(uint8_t state) {
   }
 }
 
-const char *alarm_state(uint8_t state) {
+inline const char *alarm_state(uint8_t state) {
   switch (state) {
     case 0:
       return "No alarm";
