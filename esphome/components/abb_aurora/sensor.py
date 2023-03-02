@@ -123,7 +123,7 @@ async def to_code(config):
     if CONF_GLOBAL_STATE in config:
         conf = config[CONF_GLOBAL_STATE]
         ts = await text_sensor.new_text_sensor(conf)
-        cg.add(var.set_global_state(ts))
+        cg.add(var.set_global_state_sensor(ts))
 
     if CONF_GRID_VOLTAGE in config:
         conf = config[CONF_GRID_VOLTAGE]
