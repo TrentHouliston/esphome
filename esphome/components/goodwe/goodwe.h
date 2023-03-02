@@ -24,7 +24,6 @@ class GoodWe : public Component, public uart::UARTDevice {
 
   void loop() override;
 
-  void setup() override;
   void dump_config() override;
 
  protected:

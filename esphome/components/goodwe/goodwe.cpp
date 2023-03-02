@@ -201,8 +201,6 @@ void GoodWe::loop() {
   }
 }
 
-void GoodWe::setup() {}
-
 void GoodWe::dump_config() {  // NOLINT(readability-function-cognitive-complexity)
   ESP_LOGCONFIG(TAG, "GoodWe:");
 
