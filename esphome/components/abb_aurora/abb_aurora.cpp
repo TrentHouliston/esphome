@@ -51,7 +51,7 @@ void ABBAurora::set_fan_speed_sensor(sensor::Sensor *fan_speed_sensor) {  //
 
 void ABBAurora::loop() {
   uint32_t now = millis();
-  if (!this->available() && (this->idle_ || now - this->last_request_ > this->timeout_)) {
+  if (!this->available() && (this->idle_ || now - this->last_request_time_ > this->timeout_)) {
     if ((now - this->last_request_time_) > this->timeout_) {
       ESP_LOGW(TAG, "Timed out waiting for response");
     }
@@ -61,6 +61,9 @@ void ABBAurora::loop() {
     this->processors_idx_ = (this->processors_idx_ + 1) % this->processors_.size();
     const auto &request = processors_[this->processors_idx_].request_;
     this->write_array(request, sizeof(request));
+    this->idle_ = false;
+    this->last_request_time_ = now;
+    ESP_LOGVV(TAG, "Sent request packet to inverter");
   } else {
     while (this->available()) {
       // Read into the buffer until we reach 10 bytes (all return packets are 6 bytes + crc)

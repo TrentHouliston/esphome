@@ -38,7 +38,7 @@ class ABBAurora : public Component, public uart::UARTDevice {
 
   uint8_t address_ = 2;
   uint32_t timeout_ = 100;
-  uint32_t last_request_ = 0;
+  uint32_t last_request_time_ = 0;
   bool idle_ = true;
 
   int idx_ = 0;

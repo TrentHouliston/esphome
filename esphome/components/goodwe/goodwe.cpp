@@ -95,6 +95,7 @@ void GoodWe::loop() {
     // Send the request packet and reset our read index
     this->write_array(request_packet, sizeof(request_packet));
     this->last_request_time_ = now;
+    this->idle_ = false;
     this->idx_ = 0;
     ESP_LOGVV(TAG, "Sent request packet to inverter");
   } else {
