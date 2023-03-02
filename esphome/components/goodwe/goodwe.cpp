@@ -47,9 +47,7 @@ struct Response {
   Data<uint32_t, 1> hours_total;
   char unknown2[12];
   uint16_t daily_energy;
-  char unkonwn3[4];
-  uint8_t seconds;
-  char unknown3[9];
+  char unkonwn3[14];
   uint16_t crc;
 } __attribute__((packed));
 
@@ -100,10 +98,12 @@ void GoodWe::loop() {
 
       // When we have a full packet, parse it
       if (idx == sizeof(Response)) {
+        // Reset for next packet
+        idx = 0;
+
         // Check the header
         if (buffer[0] != 0xAA || buffer[1] != 0x55) {
           ESP_LOGW(TAG, "Invalid header in response");
-          idx = 0;
           return;
         }
 
@@ -114,7 +114,6 @@ void GoodWe::loop() {
         }
         if (crc != swap_endian(((Response *) buffer)->crc)) {
           ESP_LOGW(TAG, "Invalid CRC in response");
-          idx = 0;
           return;
         }
 
@@ -122,13 +121,21 @@ void GoodWe::loop() {
         Response *response = reinterpret_cast<Response *>(buffer);
         ESP_LOGVV(TAG, "Received response from inverter");
 
-        // Filter so we only update when the seconds change
-        if (response->seconds == this->last_seconds_) {
-          ESP_LOGVV(TAG, "No new data");
-          idx = 0;
+        // Check all the deduplications and if any have changed, send everything
+        bool changed = false;
+        changed |= this->work_mode_dedup_.next(response->work_mode);
+        changed |= this->grid_voltage_dedup_.next(response->ac_grid_voltage);
+        changed |= this->grid_current_dedup_.next(response->ac_grid_current);
+        changed |= this->grid_power_dedup_.next(response->ac_grid_power);
+        changed |= this->grid_frequency_dedup_.next(response->ac_grid_frequency);
+        changed |= this->solar_string_1_voltage_dedup_.next(response->solar_string_1_voltage);
+        changed |= this->solar_string_1_current_dedup_.next(response->solar_string_1_current);
+        changed |= this->solar_string_2_voltage_dedup_.next(response->solar_string_2_voltage);
+        changed |= this->solar_string_2_current_dedup_.next(response->solar_string_2_current);
+        changed |= this->temperature_dedup_.next(response->temperature);
+        if (!changed) {
           return;
         }
-        this->last_seconds_ = response->seconds;
 
         // Work mode
         if (this->work_mode_sensor_ != nullptr) {
@@ -189,9 +196,6 @@ void GoodWe::loop() {
         if (this->temperature_sensor_ != nullptr) {
           this->temperature_sensor_->publish_state(response->temperature);
         }
-
-        // Reset our read index
-        idx = 0;
       }
     }
   }

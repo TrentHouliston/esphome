@@ -4,6 +4,7 @@
 #include "esphome/components/uart/uart.h"
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/text_sensor/text_sensor.h"
+#include "esphome/core/helpers.h"
 
 namespace esphome {
 namespace goodwe {
@@ -41,7 +42,16 @@ class GoodWe : public Component, public uart::UARTDevice {
   sensor::Sensor *solar_string_2_current_sensor_{nullptr};
   sensor::Sensor *temperature_sensor_{nullptr};
 
-  uint8_t last_seconds_ = 255;
+  Deduplicator<uint16_t> work_mode_dedup_;
+  Deduplicator<float> grid_voltage_dedup_;
+  Deduplicator<float> grid_current_dedup_;
+  Deduplicator<float> grid_power_dedup_;
+  Deduplicator<float> grid_frequency_dedup_;
+  Deduplicator<float> solar_string_1_voltage_dedup_;
+  Deduplicator<float> solar_string_1_current_dedup_;
+  Deduplicator<float> solar_string_2_voltage_dedup_;
+  Deduplicator<float> solar_string_2_current_dedup_;
+  Deduplicator<float> temperature_dedup_;
 };
 }  // namespace goodwe
 }  // namespace esphome
