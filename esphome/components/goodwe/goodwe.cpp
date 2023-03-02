@@ -123,6 +123,7 @@ void GoodWe::loop() {
         ESP_LOGVV(TAG, "Received response from inverter");
 
         if (response->seconds == this->last_seconds_) {
+          this->last_seconds_ = response->seconds;
           ESP_LOGVV(TAG, "No new data");
           idx = 0;
           return;
