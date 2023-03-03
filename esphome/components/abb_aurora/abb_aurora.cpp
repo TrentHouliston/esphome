@@ -62,8 +62,8 @@ void ABBAurora::loop() {
     const auto &request = processors_[this->processors_idx_].request_;
 
     // Log the request packet into space separated hex values
-    // ESP_LOGD(TAG, "Packet: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X", request[0], request[1], request[2],
-    //          request[3], request[4], request[5], request[6], request[7], request[8], request[9]);
+    ESP_LOGD(TAG, "Packet: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X", request[0], request[1], request[2],
+             request[3], request[4], request[5], request[6], request[7], request[8], request[9]);
 
     this->write_array(request, sizeof(request));
     this->idle_ = false;
