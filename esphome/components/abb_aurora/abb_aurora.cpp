@@ -2,6 +2,7 @@
 #include "esphome/core/log.h"
 #include "strings.h"
 #include "packet_types.h"
+#include "esphome/core/log.h"
 
 namespace esphome {
 namespace abb_aurora {
@@ -102,9 +103,10 @@ void ABBAurora::loop() {
 
         // Send the data
         sensor::Sensor *sensor = this->processors_[this->processors_idx_].sensor_;
-        uint32_t be = *reinterpret_cast<const uint32_t *>(response->data_);
-        ESP_LOGD(TAG, "Data: %02X %02X %02X %02X", response->data_[0], response->data_[1], response->data_[2],
-                 response->data_[3]);
+        uint32_t le = esphome::convert_big_endian(*reinterpret_cast<const uint32_t *>(response->data_));
+        float v = *reinterpret_cast<const float *>(&le);
+        ESP_LOGD(TAG, "LE: %08X", le);
+        ESP_LOGD(TAG, "V: %f", v);
 
         // uint32_t le = (be >> 24) | ((be << 8) & 0x00FF0000) | ((be >> 8) & 0x0000FF00) | (be << 24);
         // float v = *reinterpret_cast<const float *>(&le);
