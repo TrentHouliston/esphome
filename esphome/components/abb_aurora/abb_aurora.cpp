@@ -50,6 +50,7 @@ void ABBAurora::set_fan_speed_sensor(sensor::Sensor *fan_speed_sensor) {  //
 }
 
 void ABBAurora::loop() {
+  return;
   uint32_t now = millis();
   if (this->processors_.empty()) {
     ESP_LOGW(TAG, "No sensors configured, aborting");
