@@ -103,9 +103,16 @@ void ABBAurora::loop() {
 
         // Send the data
         sensor::Sensor *sensor = this->processors_[this->processors_idx_].sensor_;
-        uint32_t le = esphome::convert_big_endian(*reinterpret_cast<const uint32_t *>(response->data_));
+        // Read the value as a big endian uint32_t using bitshifts
+        union {
+          uint32_t u32;
+          float f;
+        } v;
+        v.u32 =
+            (response->data_[0] << 24) | (response->data_[1] << 16) | (response->data_[2] << 8) | response->data_[3];
+
         // float v = *reinterpret_cast<const float *>(&le);
-        ESP_LOGD(TAG, "LE: %08X", le);
+        ESP_LOGD(TAG, "LE: %08X", v.u32);
         // ESP_LOGD(TAG, "V: %f", v);
 
         // uint32_t le = (be >> 24) | ((be << 8) & 0x00FF0000) | ((be >> 8) & 0x0000FF00) | (be << 24);
