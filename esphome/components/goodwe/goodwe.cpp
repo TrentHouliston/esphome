@@ -116,7 +116,7 @@ void GoodWe::loop() {
         for (int i = 0; i < sizeof(Response) - 2; ++i) {
           checksum += this->buffer_[i];
         }
-        if (checksum != swap_endian(((Response *) this->buffer_)->checksum_)) {
+        if (checksum != esphome::convert_big_endian(((Response *) this->buffer_)->checksum_)) {
           ESP_LOGW(TAG, "Invalid checksum in response");
           return;
         }
@@ -143,7 +143,7 @@ void GoodWe::loop() {
 
         // Work mode
         if (this->work_mode_sensor_ != nullptr) {
-          switch (swap_endian(response->work_mode_)) {
+          switch (esphome::convert_big_endian(response->work_mode_)) {
             case 0:
               this->work_mode_sensor_->publish_state("Standby");
               break;
