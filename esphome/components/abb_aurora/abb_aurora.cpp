@@ -74,13 +74,13 @@ void ABBAurora::loop() {
     for (int i = 0; this->available() && i < sizeof(Response); ++i) {
       // Read into the buffer until we reach 10 bytes (all return packets are 6 bytes + crc)
       this->read_byte(this->buffer_ + this->idx_);
-      continue;
       this->idx_ += 1;
 
       if (this->idx_ == sizeof(Response)) {
         // We have a full packet, process it
         this->idx_ = 0;
         this->idle_ = true;
+        continue;
 
         Response *response = reinterpret_cast<Response *>(this->buffer_);
 
