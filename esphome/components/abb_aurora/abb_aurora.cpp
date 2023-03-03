@@ -63,8 +63,7 @@ void ABBAurora::loop() {
     this->last_request_time_ = now;
     ESP_LOGVV(TAG, "Sent request packet to inverter");
   } else {
-    // while (this->available()) {
-    for (int i = 0; this->available() && i < sizeof(Response); ++i) {
+    while (this->available()) {
       // Read into the buffer until we reach 10 bytes (all return packets are 6 bytes + crc)
       this->read_byte(this->buffer_ + this->idx_);
       this->idx_ += 1;
