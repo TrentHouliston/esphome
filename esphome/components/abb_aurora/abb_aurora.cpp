@@ -112,7 +112,7 @@ void ABBAurora::loop() {
 void ABBAurora::setup() {
   // Go through each sensor and make a packet processor for it
   auto create_process = [&](sensor::Sensor *ptr, uint8_t measure_type) {
-    if (this->*ptr != nullptr) {
+    if (ptr != nullptr) {
       this->processors_.emplace_back();
       auto &v = this->processors_.back();
       new (v.request_) RequestMeasure(this->address_, measure_type, true);
