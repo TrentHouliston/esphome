@@ -113,7 +113,7 @@ void ABBAurora::loop() {
 
         // float v = *reinterpret_cast<const float *>(&le);
         ESP_LOGD(TAG, "LE: %08X", v.u32);
-        // ESP_LOGD(TAG, "V: %f", v);
+        ESP_LOGD(TAG, "V: %f", v.f);
 
         // uint32_t le = (be >> 24) | ((be << 8) & 0x00FF0000) | ((be >> 8) & 0x0000FF00) | (be << 24);
         // float v = *reinterpret_cast<const float *>(&le);
