@@ -91,7 +91,7 @@ void ABBAurora::loop() {
 
         // Check the transmit state
         if (response->transmit_state != 0x00) {
-          ESP_LOGW(TAG, "Invalid transmit state!", transmission_state(response->transmit_state));
+          ESP_LOGW(TAG, "Invalid transmit state (%s)!", transmission_state(response->transmit_state));
           return;
         }
 
