@@ -101,6 +101,7 @@ void ABBAurora::loop() {
         }
 
         // Send the data
+        continue;
         auto &sensor = processors_[this->processors_idx_].sensor_;
         float v = *reinterpret_cast<const float *>(response->data_);
         sensor->publish_state(v);
