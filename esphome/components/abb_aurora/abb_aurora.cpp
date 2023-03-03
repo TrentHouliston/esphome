@@ -80,7 +80,6 @@ void ABBAurora::loop() {
         // We have a full packet, process it
         this->idx_ = 0;
         this->idle_ = true;
-        continue;
 
         Response *response = reinterpret_cast<Response *>(this->buffer_);
 
@@ -100,6 +99,8 @@ void ABBAurora::loop() {
         if (this->global_state_sensor_ != nullptr) {
           this->global_state_sensor_->publish_state(global_state(response->global_state));
         }
+
+        continue;
 
         // Process the packet using the appropriate processor
         const auto &process = processors_[this->processors_idx_].process_;
