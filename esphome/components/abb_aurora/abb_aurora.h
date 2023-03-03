@@ -45,9 +45,8 @@ class ABBAurora : public Component, public uart::UARTDevice {
   uint8_t buffer_[8];
 
   struct Processor {
-    using Callback = std::function<void(const Response &response)>;
     uint8_t request_[10];  // All requests are 8 bytes + crc
-    Callback process_;
+    sensor::Sensor *ABBAurora::*sensor_ = nullptr;
   };
 
   std::vector<Processor> processors_;

@@ -100,11 +100,10 @@ void ABBAurora::loop() {
           this->global_state_sensor_->publish_state(global_state(response->global_state));
         }
 
-        continue;
-
-        // Process the packet using the appropriate processor
-        const auto &process = processors_[this->processors_idx_].process_;
-        process(*response);
+        // Send the data
+        auto &sensor = processors_[this->processors_idx_].sensor_;
+        float v = *reinterpret_cast<const float *>(response->data_);
+        (this->*sensor)->publish_state(v);
       }
     }
   }
@@ -117,10 +116,7 @@ void ABBAurora::setup() {
       this->processors_.emplace_back();
       auto &v = this->processors_.back();
       new (v.request_) RequestMeasure(this->address_, measure_type, true);
-      v.process_ = [this, ptr](const Response &buffer) {
-        float v = *reinterpret_cast<const float *>(buffer.data_);
-        (this->*ptr)->publish_state(v);
-      };
+      v.sensor_ = ptr;
     }
   };
 
