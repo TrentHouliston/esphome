@@ -50,13 +50,8 @@ void ABBAurora::set_fan_speed_sensor(sensor::Sensor *fan_speed_sensor) {  //
 }
 
 void ABBAurora::loop() {
-  return;
   uint32_t now = millis();
-  if (this->processors_.empty()) {
-    ESP_LOGW(TAG, "No sensors configured, aborting");
-    return;
-  }
-  if (!this->available() && (this->idle_ || now - this->last_request_time_ > this->timeout_)) {
+  if (true || !this->available() && (this->idle_ || now - this->last_request_time_ > this->timeout_)) {
     if ((now - this->last_request_time_) > this->timeout_) {
       ESP_LOGW(TAG, "Timed out waiting for response");
     }
