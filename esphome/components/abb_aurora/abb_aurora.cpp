@@ -61,11 +61,6 @@ void ABBAurora::loop() {
     this->idx_ = 0;
     this->processors_idx_ = (this->processors_idx_ + 1) % this->processors_.size();
     const auto &request = processors_[this->processors_idx_].request_;
-
-    // Log the request packet into space separated hex values
-    ESP_LOGD(TAG, "Packet: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X", request[0], request[1], request[2],
-             request[3], request[4], request[5], request[6], request[7], request[8], request[9]);
-
     this->write_array(request, sizeof(request));
     this->idle_ = false;
     this->last_request_time_ = now;
@@ -110,14 +105,7 @@ void ABBAurora::loop() {
         } v;
         v.u32 =
             (response->data_[0] << 24) | (response->data_[1] << 16) | (response->data_[2] << 8) | response->data_[3];
-
-        // float v = *reinterpret_cast<const float *>(&le);
-        ESP_LOGD(TAG, "LE: %08X", v.u32);
-        ESP_LOGD(TAG, "V: %f", v.f);
-
-        // uint32_t le = (be >> 24) | ((be << 8) & 0x00FF0000) | ((be >> 8) & 0x0000FF00) | (be << 24);
-        // float v = *reinterpret_cast<const float *>(&le);
-        // sensor->publish_state(v);
+        sensor->publish_state(v.f);
       }
     }
   }
