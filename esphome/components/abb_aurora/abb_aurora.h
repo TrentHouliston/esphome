@@ -46,7 +46,7 @@ class ABBAurora : public Component, public uart::UARTDevice {
 
   struct Processor {
     uint8_t request_[10];  // All requests are 8 bytes + crc
-    sensor::Sensor *ABBAurora::*sensor_ = nullptr;
+    sensor::Sensor *sensor_ = nullptr;
   };
 
   std::vector<Processor> processors_;

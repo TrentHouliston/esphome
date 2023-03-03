@@ -111,7 +111,7 @@ void ABBAurora::loop() {
 
 void ABBAurora::setup() {
   // Go through each sensor and make a packet processor for it
-  auto create_process = [&](sensor::Sensor *ABBAurora::*ptr, uint8_t measure_type) {
+  auto create_process = [&](sensor::Sensor *ptr, uint8_t measure_type) {
     if (this->*ptr != nullptr) {
       this->processors_.emplace_back();
       auto &v = this->processors_.back();
@@ -120,18 +120,18 @@ void ABBAurora::setup() {
     }
   };
 
-  create_process(&ABBAurora::grid_voltage_sensor_, 1);
-  create_process(&ABBAurora::grid_current_sensor_, 2);
-  create_process(&ABBAurora::grid_power_sensor_, 3);
-  create_process(&ABBAurora::grid_frequency_sensor_, 4);
-  create_process(&ABBAurora::solar_voltage_sensor_, 23);
-  create_process(&ABBAurora::solar_current_sensor_, 25);
-  create_process(&ABBAurora::solar_power_sensor_, 8);
-  create_process(&ABBAurora::booster_voltage_sensor_, 5);
-  create_process(&ABBAurora::booster_midpoint_voltage_sensor_, 33);
-  create_process(&ABBAurora::inverter_temperature_sensor_, 21);
-  create_process(&ABBAurora::booster_temperature_sensor_, 22);
-  create_process(&ABBAurora::fan_speed_sensor_, 54);
+  create_process(grid_voltage_sensor_, 1);
+  create_process(grid_current_sensor_, 2);
+  create_process(grid_power_sensor_, 3);
+  create_process(grid_frequency_sensor_, 4);
+  create_process(solar_voltage_sensor_, 23);
+  create_process(solar_current_sensor_, 25);
+  create_process(solar_power_sensor_, 8);
+  create_process(booster_voltage_sensor_, 5);
+  create_process(booster_midpoint_voltage_sensor_, 33);
+  create_process(inverter_temperature_sensor_, 21);
+  create_process(booster_temperature_sensor_, 22);
+  create_process(fan_speed_sensor_, 54);
 }
 
 void ABBAurora::dump_config() {  // NOLINT(readability-function-cognitive-complexity)
