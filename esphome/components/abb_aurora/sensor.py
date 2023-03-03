@@ -31,7 +31,6 @@ CONF_BOOSTER_VOLTAGE = "booster_voltage"
 CONF_BOOSTER_MIDPOINT_VOLTAGE = "booster_midpoint_voltage"
 CONF_INVERTER_TEMPERATURE = "inverter_temperature"
 CONF_BOOSTER_TEMPERATURE = "booster_temperature"
-CONF_FAN_SPEED = "fan_speed"
 
 abb_aurora_ns = cg.esphome_ns.namespace("abb_aurora")
 ABBAurora = abb_aurora_ns.class_("ABBAurora", uart.UARTDevice, cg.Component)
@@ -105,12 +104,6 @@ CONFIG_SCHEMA = cv.Schema(
             device_class=DEVICE_CLASS_TEMPERATURE,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
-        cv.Optional(CONF_FAN_SPEED): sensor.sensor_schema(
-            unit_of_measurement=UNIT_PULSES_PER_MINUTE,
-            accuracy_decimals=0,
-            device_class=DEVICE_CLASS_FREQUENCY,
-            state_class=STATE_CLASS_MEASUREMENT,
-        ),
     }
 ).extend(uart.UART_DEVICE_SCHEMA)
 
@@ -169,7 +162,3 @@ async def to_code(config):
         conf = config[CONF_BOOSTER_TEMPERATURE]
         sens = await sensor.new_sensor(conf)
         cg.add(var.set_booster_temperature_sensor(sens))
-    if CONF_FAN_SPEED in config:
-        conf = config[CONF_FAN_SPEED]
-        sens = await sensor.new_sensor(conf)
-        cg.add(var.set_fan_speed_sensor(sens))

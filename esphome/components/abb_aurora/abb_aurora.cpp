@@ -46,9 +46,6 @@ void ABBAurora::set_inverter_temperature_sensor(sensor::Sensor *inverter_tempera
 void ABBAurora::set_booster_temperature_sensor(sensor::Sensor *booster_temperature_sensor) {
   this->booster_temperature_sensor_ = booster_temperature_sensor;
 }
-void ABBAurora::set_fan_speed_sensor(sensor::Sensor *fan_speed_sensor) {  //
-  this->fan_speed_sensor_ = fan_speed_sensor;
-}
 
 void ABBAurora::loop() {
   uint32_t now = millis();
@@ -133,7 +130,6 @@ void ABBAurora::setup() {
   add_processor(this->booster_midpoint_voltage_sensor_, 33);
   add_processor(this->inverter_temperature_sensor_, 21);
   add_processor(this->booster_temperature_sensor_, 22);
-  add_processor(this->fan_speed_sensor_, 54);
 }
 
 void ABBAurora::dump_config() {  // NOLINT(readability-function-cognitive-complexity)
@@ -152,7 +148,6 @@ void ABBAurora::dump_config() {  // NOLINT(readability-function-cognitive-comple
   LOG_SENSOR("  ", "Booster Midpoint Voltage", this->booster_midpoint_voltage_sensor_);
   LOG_SENSOR("  ", "Inverter Temperature", this->inverter_temperature_sensor_);
   LOG_SENSOR("  ", "Booster Temperature", this->booster_temperature_sensor_);
-  LOG_SENSOR("  ", "Fan Speed", this->fan_speed_sensor_);
 }
 
 }  // namespace abb_aurora
