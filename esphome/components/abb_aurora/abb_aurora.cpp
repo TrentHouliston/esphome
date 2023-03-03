@@ -105,7 +105,8 @@ void ABBAurora::loop() {
         uint32_t be = *reinterpret_cast<const uint32_t *>(response->data_);
         uint32_t le = (be >> 24) | ((be << 8) & 0x00FF0000) | ((be >> 8) & 0x0000FF00) | (be << 24);
         float v = *reinterpret_cast<const float *>(&le);
-        sensor->publish_state(v);
+        ESP_LOGD(TAG, "Got value %f", v);
+        // sensor->publish_state(v);
       }
     }
   }
