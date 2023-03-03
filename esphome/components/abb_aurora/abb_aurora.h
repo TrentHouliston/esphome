@@ -31,6 +31,7 @@ class ABBAurora : public Component, public uart::UARTDevice {
   void set_booster_temperature_sensor(sensor::Sensor *booster_temperature_sensor);
   void set_fan_speed_sensor(sensor::Sensor *fan_speed_sensor);
 
+  void add_processor(sensor::Sensor *sensor, uint8_t measure_type);
   void setup() override;
   void loop() override;
 
@@ -66,5 +67,6 @@ class ABBAurora : public Component, public uart::UARTDevice {
   sensor::Sensor *booster_temperature_sensor_{nullptr};
   sensor::Sensor *fan_speed_sensor_{nullptr};
 };
+
 }  // namespace abb_aurora
 }  // namespace esphome
