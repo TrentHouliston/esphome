@@ -247,7 +247,7 @@ class ThrottleAverageFilter : public Filter, public Component {
   unsigned int n_{0};
 };
 
-using lambda_filter_t = std::function<optional<float>(float)>;
+using lambda_filter_t = std::function<optional<float>(float, float, float)>;
 
 /** This class allows for creation of simple template filters.
  *
@@ -267,6 +267,8 @@ class LambdaFilter : public Filter {
 
  protected:
   lambda_filter_t lambda_filter_;
+  float prev_x_{NAN};
+  float prev_out_{NAN};
 };
 
 /// A simple filter that adds `offset` to each value it receives.

@@ -278,7 +278,9 @@ const lambda_filter_t &LambdaFilter::get_lambda_filter() const { return this->la
 void LambdaFilter::set_lambda_filter(const lambda_filter_t &lambda_filter) { this->lambda_filter_ = lambda_filter; }
 
 optional<float> LambdaFilter::new_value(float value) {
-  auto it = this->lambda_filter_(value);
+  auto it = this->lambda_filter_(value, this->prev_x_, this->prev_out_);
+  this->prev_x_ = value;
+  this->prev_out_ = it.value_or(this->prev_out_);
   ESP_LOGVV(TAG, "LambdaFilter(%p)::new_value(%f) -> %f", this, value, it.value_or(INFINITY));
   return it;
 }
