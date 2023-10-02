@@ -21,7 +21,7 @@ from esphome.coroutine import FakeEventLoop as _FakeEventLoop
 
 # pylint: disable=unused-import
 from esphome.coroutine import coroutine, coroutine_with_priority  # noqa
-from esphome.helpers import ensure_unique_string, is_ha_addon
+from esphome.helpers import ensure_unique_string, get_str_env, is_ha_addon
 from esphome.util import OrderedDict
 
 if TYPE_CHECKING:
@@ -409,6 +409,9 @@ class Define:
             return self.as_tuple == other.as_tuple
         return NotImplemented
 
+    def __str__(self):
+        return f"{self.name}={self.value}"
+
 
 class Library:
     def __init__(self, name, version, repository=None):
@@ -453,6 +456,8 @@ class EsphomeCore:
         self.ace = False
         # The name of the node
         self.name: Optional[str] = None
+        # The friendly name of the node
+        self.friendly_name: Optional[str] = None
         # Additional data components can store temporary data in
         # The first key to this dict should always be the integration name
         self.data = {}
@@ -492,6 +497,7 @@ class EsphomeCore:
     def reset(self):
         self.dashboard = False
         self.name = None
+        self.friendly_name = None
         self.data = {}
         self.config_path = None
         self.build_path = None
@@ -549,6 +555,14 @@ class EsphomeCore:
         return os.path.dirname(self.config_path)
 
     @property
+    def data_dir(self):
+        if is_ha_addon():
+            return os.path.join("/data")
+        if "ESPHOME_DATA_DIR" in os.environ:
+            return get_str_env("ESPHOME_DATA_DIR", None)
+        return self.relative_config_path(".esphome")
+
+    @property
     def config_filename(self):
         return os.path.basename(self.config_path)
 
@@ -557,7 +571,7 @@ class EsphomeCore:
         return os.path.join(self.config_dir, path_)
 
     def relative_internal_path(self, *path: str) -> str:
-        return self.relative_config_path(".esphome", *path)
+        return os.path.join(self.data_dir, *path)
 
     def relative_build_path(self, *path):
         path_ = os.path.expanduser(os.path.join(*path))
@@ -567,17 +581,15 @@ class EsphomeCore:
         return self.relative_build_path("src", *path)
 
     def relative_pioenvs_path(self, *path):
-        if is_ha_addon():
-            return os.path.join("/data", self.name, ".pioenvs", *path)
         return self.relative_build_path(".pioenvs", *path)
 
     def relative_piolibdeps_path(self, *path):
-        if is_ha_addon():
-            return os.path.join("/data", self.name, ".piolibdeps", *path)
         return self.relative_build_path(".piolibdeps", *path)
 
     @property
     def firmware_bin(self):
+        if self.is_libretiny:
+            return self.relative_pioenvs_path(self.name, "firmware.uf2")
         return self.relative_pioenvs_path(self.name, "firmware.bin")
 
     @property
@@ -595,6 +607,22 @@ class EsphomeCore:
     @property
     def is_rp2040(self):
         return self.target_platform == "rp2040"
+
+    @property
+    def is_bk72xx(self):
+        return self.target_platform == "bk72xx"
+
+    @property
+    def is_rtl87xx(self):
+        return self.target_platform == "rtl87xx"
+
+    @property
+    def is_libretiny(self):
+        return self.is_bk72xx or self.is_rtl87xx
+
+    @property
+    def is_host(self):
+        return self.target_platform == "host"
 
     @property
     def target_framework(self):
@@ -650,7 +678,15 @@ class EsphomeCore:
                 f"Library {library} must be instance of Library, not {type(library)}"
             )
         for other in self.libraries[:]:
-            if other.name != library.name or other.name is None or library.name is None:
+            if other.name is None or library.name is None:
+                continue
+            library_name = (
+                library.name if "/" not in library.name else library.name.split("/")[1]
+            )
+            other_name = (
+                other.name if "/" not in other.name else other.name.split("/")[1]
+            )
+            if other_name != library_name:
                 continue
             if other.repository is not None:
                 if library.repository is None or other.repository == library.repository:

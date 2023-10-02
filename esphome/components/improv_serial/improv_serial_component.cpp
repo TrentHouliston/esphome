@@ -48,7 +48,7 @@ uint8_t ImprovSerialComponent::read_byte_() {
   this->hw_serial_->readBytes(&data, 1);
 #endif
 #ifdef USE_ESP_IDF
-  uart_read_bytes(this->uart_num_, &data, 1, 20 / portTICK_RATE_MS);
+  uart_read_bytes(this->uart_num_, &data, 1, 20 / portTICK_PERIOD_MS);
 #endif
   return data;
 }
@@ -95,6 +95,9 @@ void ImprovSerialComponent::loop() {
 
 std::vector<uint8_t> ImprovSerialComponent::build_rpc_settings_response_(improv::Command command) {
   std::vector<std::string> urls;
+  if (!this->next_url_.empty()) {
+    urls.push_back(this->get_formatted_next_url_());
+  }
 #ifdef USE_WEBSERVER
   auto ip = wifi::global_wifi_component->wifi_sta_ip();
   std::string webserver_url = "http://" + ip.str() + ":" + to_string(USE_WEBSERVER_PORT);

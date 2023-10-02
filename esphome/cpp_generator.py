@@ -174,10 +174,9 @@ class ArrayInitializer(Expression):
         if not self.args:
             return "{}"
         if self.multiline:
-            cpp = "{\n"
-            for arg in self.args:
-                cpp += f"  {arg},\n"
-            cpp += "}"
+            cpp = "{\n  "
+            cpp += ",\n  ".join(str(arg) for arg in self.args)
+            cpp += ",\n}"
         else:
             cpp = f"{{{', '.join(str(arg) for arg in self.args)}}}"
         return cpp
@@ -664,7 +663,11 @@ async def process_lambda(
     :param return_type: The return type of the lambda.
     :return: The generated lambda expression.
     """
-    from esphome.components.globals import GlobalsComponent, RestoringGlobalsComponent
+    from esphome.components.globals import (
+        GlobalsComponent,
+        RestoringGlobalsComponent,
+        RestoringGlobalStringComponent,
+    )
 
     if value is None:
         return
@@ -677,6 +680,7 @@ async def process_lambda(
             and (
                 full_id.type.inherits_from(GlobalsComponent)
                 or full_id.type.inherits_from(RestoringGlobalsComponent)
+                or full_id.type.inherits_from(RestoringGlobalStringComponent)
             )
         ):
             parts[i * 3 + 1] = var.value()
