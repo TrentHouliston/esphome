@@ -31,6 +31,7 @@ PulseMeterSensor = pulse_meter_ns.class_(
 PulseMeterInternalFilterMode = PulseMeterSensor.enum("InternalFilterMode")
 FILTER_MODES = {
     "EDGE": PulseMeterInternalFilterMode.FILTER_EDGE,
+    "WINDOW": PulseMeterInternalFilterMode.FILTER_WINDOW,
     "PULSE": PulseMeterInternalFilterMode.FILTER_PULSE,
 }
 

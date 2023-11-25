@@ -23,6 +23,9 @@ void PulseMeterSensor::setup() {
 
   if (this->filter_mode_ == FILTER_EDGE) {
     this->pin_->attach_interrupt(PulseMeterSensor::edge_intr, this, gpio::INTERRUPT_RISING_EDGE);
+  } else if (this->filter_mode_ == FILTER_WINDOW) {
+    filter_state_.window_.window_us_ = this->filter_us_ / 2;
+    this->pin_->attach_interrupt(PulseMeterSensor::window_intr, this, gpio::INTERRUPT_ANY_EDGE);
   } else if (this->filter_mode_ == FILTER_PULSE) {
     this->pin_->attach_interrupt(PulseMeterSensor::pulse_intr, this, gpio::INTERRUPT_ANY_EDGE);
   }
@@ -102,12 +105,45 @@ void IRAM_ATTR PulseMeterSensor::edge_intr(PulseMeterSensor *sensor) {
   // This is an interrupt handler - we can't call any virtual method from this method
   // Get the current time before we do anything else so the measurements are consistent
   const uint32_t now = micros();
+  auto &state = sensor->filter_state_.edge_;
 
-  if ((now - sensor->last_edge_candidate_us_) >= sensor->filter_us_) {
-    sensor->last_edge_candidate_us_ = now;
+  if ((now - state->last_intr_) >= sensor->filter_us_) {
+    state->last_sent_edge_us_ = now;
     sensor->set_->last_detected_edge_us_ = now;
     sensor->set_->count_++;
   }
+}
+
+void IRAM_ATTR PulseMeterSensor::window_intr(PulseMeterSensor *sensor) {
+  const uint32_t now = micros();
+  const bool pin_val = sensor->isr_pin_.digital_read();
+  auto &state = sensor->filter_state_.window_;
+
+  int delta = now - state->last_intr_;
+  delta = state->last_pin_val_ ? delta : -delta;
+
+  int new_window_time = std::min(std::max(state->window_time_ + delta, -sensor->filter_us_), sensor->filter_us_);
+  state->min_window_time_ = std::min(state->min_window_time_, new_window_time);
+
+  // When the window passes a transition point
+  if (!state->in_pulse_ && (new_window_time >= state->window_us_ && state->window_us_ > state->window_time_)) {
+    // This really is just min(last_intr_, now - (new_window_time - min_window_time))
+    // however due to timestamp rollover this is required to ensure we choose the actual earlier time
+    sensor->set_->last_detected_edge_us_ =
+        now + std::min(now - state->last_intr_, now - uint32_t(now - (new_window_time - state->min_window_time)));
+    sensor->set_->count_++;
+
+    state->in_pulse_ = true;
+    state->min_window_time_ = state->window_time_;
+  } else if (sensor->in_pulse_ &&
+             (new_window_time <= -state->window_us_ && -state->window_us_ < sensor->window_time_)) {
+    // Falling edge, pulse ended
+    sensor->in_pulse_ = false;
+  }
+
+  state->window_time_ = new_window_time;
+  state->last_intr_ = now;
+  state->last_pin_val_ = pin_val;
 }
 
 void IRAM_ATTR PulseMeterSensor::pulse_intr(PulseMeterSensor *sensor) {
@@ -115,32 +151,32 @@ void IRAM_ATTR PulseMeterSensor::pulse_intr(PulseMeterSensor *sensor) {
   // Get the current time before we do anything else so the measurements are consistent
   const uint32_t now = micros();
   const bool pin_val = sensor->isr_pin_.digital_read();
+  auto &state = sensor->filter_state_.pulse_;
 
   // A pulse occurred faster than we can detect
-  if (sensor->last_pin_val_ == pin_val) {
+  if (state->last_pin_val_ == pin_val) {
     // If we haven't reached the filter length yet we need to reset our last_intr_ to now
     // otherwise we can consider this noise as the "pulse" was certainly less than filter_us_
-    if (now - sensor->last_intr_ < sensor->filter_us_) {
-      sensor->last_intr_ = now;
+    if (now - state->last_intr_ < sensor->filter_us_) {
+      state->last_intr_ = now;
     }
   } else {
     // Check if the last interrupt was long enough in the past
-    if (now - sensor->last_intr_ > sensor->filter_us_) {
+    if (now - state->last_intr_ > sensor->filter_us_) {
       // High pulse of filter length now falling (therefore last_intr_ was the rising edge)
-      if (!sensor->in_pulse_ && sensor->last_pin_val_) {
-        sensor->last_edge_candidate_us_ = sensor->last_intr_;
-        sensor->in_pulse_ = true;
+      if (!state->in_pulse_ && state->last_pin_val_) {
+        sensor->set_->last_detected_edge_us_ = sensor->last_intr_;
+        sensor->set_->count_++;
+        state->in_pulse_ = true;
       }
       // Low pulse of filter length now rising (therefore last_intr_ was the falling edge)
-      else if (sensor->in_pulse_ && !sensor->last_pin_val_) {
-        sensor->set_->last_detected_edge_us_ = sensor->last_edge_candidate_us_;
-        sensor->set_->count_++;
-        sensor->in_pulse_ = false;
+      else if (state->in_pulse_ && !state->last_pin_val_) {
+        state->in_pulse_ = false;
       }
     }
 
-    sensor->last_intr_ = now;
-    sensor->last_pin_val_ = pin_val;
+    state->last_intr_ = now;
+    state->last_pin_val_ = pin_val;
   }
 }
 

@@ -14,6 +14,7 @@ class PulseMeterSensor : public sensor::Sensor, public Component {
  public:
   enum InternalFilterMode {
     FILTER_EDGE = 0,
+    FILTER_WINDOW,
     FILTER_PULSE,
   };
 
@@ -61,10 +62,30 @@ class PulseMeterSensor : public sensor::Sensor, public Component {
 
   // Only use these variables in the ISR
   ISRInternalGPIOPin isr_pin_;
-  uint32_t last_edge_candidate_us_ = 0;
-  uint32_t last_intr_ = 0;
-  bool in_pulse_ = false;
-  bool last_pin_val_ = false;
+  union FilterState {
+    /// Filter state for edge mode
+    struct Edge {
+      uint32_t last_sent_edge_us_ = 0;
+    };
+    Edge edge_;
+    /// Filter state for window mode
+    struct Window {
+      uint32_t last_intr_ = 0;
+      bool in_pulse_ = false;
+      bool last_pin_val_ = false;
+      uint32_t min_window_time_ = 0;
+      uint32_t window_width_ = 0;
+    };
+    Window window_;
+    /// Filter state for pulse mode
+    struct Pulse {
+      uint32_t last_intr_ = 0;
+      bool in_pulse_ = false;
+      bool last_pin_val_ = false;
+    };
+    Pulse pulse_;
+  };
+  FilterState filter_state_;
 };
 
 }  // namespace pulse_meter
