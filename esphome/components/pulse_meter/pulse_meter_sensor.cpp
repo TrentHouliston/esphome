@@ -132,31 +132,39 @@ void IRAM_ATTR PulseMeterSensor::edge_intr(PulseMeterSensor *sensor) {
 }
 
 void IRAM_ATTR PulseMeterSensor::pulse_intr(PulseMeterSensor *sensor) {
-  // This is an interrupt handler - we can't call any virtual method from this method
-  // Get the current time before we do anything else so the measurements are consistent
-  const uint32_t now = micros();
-  const bool pin_val = sensor->isr_pin_.digital_read();
-  auto &state = sensor->pulse_state_;
-  auto &set = *sensor->set_;
+  bool stable = false;
 
-  // Filter length has passed since the last interrupt
-  const bool length = now - state.last_intr_ >= sensor->filter_us_;
+  while (!stable) {
+    // This is an interrupt handler - we can't call any virtual method from this method
+    // Get the current time before we do anything else so the measurements are consistent
+    const uint32_t now = micros();
+    const bool pin_val = sensor->isr_pin_.digital_read();
+    auto &state = sensor->pulse_state_;
+    auto &set = *sensor->set_;
 
-  if (length && state.latched_ && !state.last_pin_val_) {  // Long enough low edge
-    state.latched_ = false;
-  } else if (length && !state.latched_ && state.last_pin_val_) {  // Long enough high edge
-    state.latched_ = true;
-    set.last_detected_edge_us_ = state.last_intr_;
-    set.count_++;
+    // Filter length has passed since the last interrupt
+    const bool length = now - state.last_intr_ >= sensor->filter_us_;
+
+    if (length && state.latched_ && !state.last_pin_val_) {  // Long enough low edge
+      state.latched_ = false;
+    } else if (length && !state.latched_ && state.last_pin_val_) {  // Long enough high edge
+      state.latched_ = true;
+      set.last_detected_edge_us_ = state.last_intr_;
+      set.count_++;
+    }
+
+    // Due to order of operations this includes
+    //    length && latched && rising   (just reset from a long low edge)
+    //    !latched && (rising || high)  (noise on the line resetting the potential rising edge)
+    set.last_rising_edge_us_ = !state.latched_ && pin_val ? now : set.last_detected_edge_us_;
+
+    state.last_intr_ = now;
+    state.last_pin_val_ = pin_val;
+
+    // If the state changed while we were processing, we need to reprocess
+    const bool end_pin_val = sensor->isr_pin_.digital_read();
+    stable = pin_val == end_pin_val;
   }
-
-  // Due to order of operations this includes
-  //    length && latched && rising   (just reset from a long low edge)
-  //    !latched && (rising || high)  (noise on the line resetting the potential rising edge)
-  set.last_rising_edge_us_ = !state.latched_ && pin_val ? now : set.last_detected_edge_us_;
-
-  state.last_intr_ = now;
-  state.last_pin_val_ = pin_val;
 }
 
 }  // namespace pulse_meter
