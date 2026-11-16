@@ -6,6 +6,7 @@
 #include "esphome/core/helpers.h"
 
 #include <cinttypes>
+#include <cmath>
 
 namespace esphome::pulse_meter {
 
@@ -46,7 +47,8 @@ class PulseMeterSensor final : public sensor::Sensor, public Component {
   bool peeked_edge_ = false;
   uint32_t total_pulses_ = 0;
   uint32_t last_processed_edge_us_ = 0;
-  float last_pulse_width_us_ = 0;
+  // NAN until a pulse width is measured, so fade has nothing to decay from
+  float last_pulse_width_us_ = NAN;
 
   // This struct and variable are used to pass data between the ISR and loop.
   // The data from state_ is read and then count_ in state_ is reset in each loop.

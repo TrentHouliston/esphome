@@ -94,6 +94,7 @@ void PulseMeterSensor::loop() {
       case MeterState::INITIAL:
       case MeterState::TIMED_OUT: {
         this->meter_state_ = MeterState::RUNNING;
+        this->last_pulse_width_us_ = NAN;
       } break;
       case MeterState::RUNNING: {
         uint32_t delta_us = state.last_detected_edge_us_ - this->last_processed_edge_us_;
