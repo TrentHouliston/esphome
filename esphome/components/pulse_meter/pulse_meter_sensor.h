@@ -21,6 +21,7 @@ class PulseMeterSensor final : public sensor::Sensor, public Component {
   void set_timeout_us(uint32_t timeout) { this->timeout_us_ = timeout; }
   void set_total_sensor(sensor::Sensor *sensor) { this->total_sensor_ = sensor; }
   void set_filter_mode(InternalFilterMode mode) { this->filter_mode_ = mode; }
+  void set_fade(bool fade) { this->fade_mode_ = fade; }
 
   void set_total_pulses(uint32_t pulses);
 
@@ -37,6 +38,7 @@ class PulseMeterSensor final : public sensor::Sensor, public Component {
   uint32_t timeout_us_ = 1000000UL * 60UL * 5UL;
   sensor::Sensor *total_sensor_{nullptr};
   InternalFilterMode filter_mode_{FILTER_EDGE};
+  bool fade_mode_{false};
 
   // Variables used in the loop
   enum class MeterState { INITIAL, RUNNING, TIMED_OUT };
@@ -44,6 +46,7 @@ class PulseMeterSensor final : public sensor::Sensor, public Component {
   bool peeked_edge_ = false;
   uint32_t total_pulses_ = 0;
   uint32_t last_processed_edge_us_ = 0;
+  float last_pulse_width_us_ = 0;
 
   // This struct and variable are used to pass data between the ISR and loop.
   // The data from state_ is read and then count_ in state_ is reset in each loop.

@@ -100,6 +100,7 @@ void PulseMeterSensor::loop() {
         float pulse_width_us = delta_us / float(state.count_);
         ESP_LOGV(TAG, "New pulse, delta: %" PRIu32 " µs, count: %" PRIu32 ", width: %.5f µs", delta_us, state.count_,
                  pulse_width_us);
+        this->last_pulse_width_us_ = pulse_width_us;
         this->publish_state((60.0f * 1000000.0f) / pulse_width_us);
       } break;
     }
@@ -108,6 +109,7 @@ void PulseMeterSensor::loop() {
   }
   // No detected edges this loop
   else {
+    // If a pulse arrived right now, this would be its width
     const uint32_t time_since_valid_edge_us = now - this->last_processed_edge_us_;
 
     switch (this->meter_state_) {
@@ -119,6 +121,12 @@ void PulseMeterSensor::loop() {
           ESP_LOGD(TAG, "No pulse detected for %" PRIu32 "s, assuming 0 pulses/min",
                    time_since_valid_edge_us / 1000000);
           this->publish_state(0.0f);
+        } else if (this->fade_mode_ && this->meter_state_ == MeterState::RUNNING &&
+                   time_since_valid_edge_us >= this->last_pulse_width_us_ * 2) {
+          // When pulses stop or slow down suddenly, publish the rate a pulse arriving now would imply,
+          // each time that implied width doubles, so the reading falls towards 0 instead of holding until timeout.
+          this->last_pulse_width_us_ = time_since_valid_edge_us;
+          this->publish_state((60.0f * 1000000.0f) / time_since_valid_edge_us);
         }
       } break;
       default:
@@ -137,6 +145,9 @@ void PulseMeterSensor::dump_config() {
   }
   ESP_LOGCONFIG(TAG, "  Assuming 0 pulses/min after not receiving a pulse for %" PRIu32 "s",
                 this->timeout_us_ / 1000000);
+  if (this->fade_mode_) {
+    ESP_LOGCONFIG(TAG, "  Fading towards 0 pulses/min while no pulses arrive");
+  }
 }
 
 void IRAM_ATTR PulseMeterSensor::edge_intr(PulseMeterSensor *sensor) {
